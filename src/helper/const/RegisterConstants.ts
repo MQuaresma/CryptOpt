@@ -1,4 +1,4 @@
-import { Register, XmmRegister } from "@/enums";
+import { Register, MmxRegister, XmmRegister } from "@/enums";
 // that Array contains the order of the arguments, which are passed to the method
 export const CALLING_CONVENTION_REGISTER_ORDER = [
   Register.rdi, // First argument goes here
@@ -18,6 +18,17 @@ export const CALLER_SAVE_REGISTERS = [
   Register.r13,
   Register.r14,
   Register.r15,
+];
+
+export const ALL_MMX_REGISTERS = [
+  MmxRegister.mm0,
+  MmxRegister.mm1,
+  MmxRegister.mm2,
+  MmxRegister.mm3,
+  MmxRegister.mm4,
+  MmxRegister.mm5,
+  MmxRegister.mm6,
+  MmxRegister.mm7,
 ];
 
 export const ALL_XMM_REGISTERS = [

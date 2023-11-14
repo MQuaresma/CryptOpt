@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { Flags, Register, XmmRegister } from "@/enums";
-import { getQwRegFromByteReg, isByteRegister, isFlag, isRegister, isXmmRegister, matchArg } from "@/helper";
+import { Flags, Register, MmxRegister, XmmRegister } from "@/enums";
+import { getQwRegFromByteReg, isByteRegister, isFlag, isRegister, isMmxRegister, isXmmRegister, matchArg } from "@/helper";
 import { RegisterAllocator } from "@/registerAllocator";
 import type { CryptOpt } from "@/types";
 
@@ -40,6 +40,8 @@ export function sanityCheckAllocations(c: CryptOpt.DynArgument): void {
       }
       if (isXmmRegister(store)) {
         r64 = store;
+      } else if (isMmxRegister(store)) {
+        r64 = store;
       }
       if (r64) {
         if (byReg[r64]) {
@@ -56,6 +58,6 @@ export function sanityCheckAllocations(c: CryptOpt.DynArgument): void {
       }
       return byReg;
     },
-    {} as { [k in Register | Flags | XmmRegister]: string },
+    {} as { [k in Register | Flags | MmxRegister | XmmRegister]: string },
   );
 }

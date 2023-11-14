@@ -77,6 +77,17 @@ export enum Register {
   r15 = "r15",
 }
 
+export enum MmxRegister {
+  mm0 = "mm0",
+  mm1 = "mm1",
+  mm2 = "mm2",
+  mm3 = "mm3",
+  mm4 = "mm4",
+  mm5 = "mm5",
+  mm6 = "mm6",
+  mm7 = "mm7",
+}
+
 export enum XmmRegister {
   xmm0 = "xmm0",
   xmm1 = "xmm1",

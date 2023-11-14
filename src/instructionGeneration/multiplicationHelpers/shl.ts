@@ -51,6 +51,7 @@ function mul_x_shl(c: CryptOpt.StringOperation, shiftCnt: CryptOpt.HexConstant):
     in: [factor],
     allocationFlags:
       AllocationFlags.DISALLOW_XMM |
+      AllocationFlags.DISALLOW_MMX |
       AllocationFlags.DISALLOW_MEM |
       AllocationFlags.IN_0_AS_OUT_REGISTER |
       AllocationFlags.SAVE_FLAG_CF |

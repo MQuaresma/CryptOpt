@@ -56,13 +56,14 @@ type ret = {
 };
 
 function initFiat(sharedObjectFilename: string, args: needFiat): ret {
-  const bridge = new FiatBridge();
+    const bridge = new FiatBridge();
+
   Model.init({
     memoryConstraints: args.memoryConstraints,
     json: bridge.getCryptOptFunction(args.method, args.curve),
   });
 
-  const symbolname = bridge.machinecode(sharedObjectFilename, args.method, args.curve);
+    const symbolname = bridge.machinecode(sharedObjectFilename, args.method, args.curve);
   const chunksize = 16; // only for reading the chunk breaks atm. see MS code
   const argwidth = bridge.argwidth(args.curve);
   const argnumin = bridge.argnumin(args.method);
@@ -144,7 +145,7 @@ function createMS(
   { argwidth, argnumin, argnumout, chunksize, bounds, symbolname }: ret,
   libcheckfunctionFile: string,
 ): { symbolname: string; measuresuite: Measuresuite } {
-  return {
+  const tmp = {
     symbolname,
     measuresuite: new Measuresuite(
       argwidth,
@@ -156,10 +157,11 @@ function createMS(
       symbolname,
     ),
   };
+    return tmp;
 }
 
 export function init(tmpDir: string, args: neededArgs): { symbolname: string; measuresuite: Measuresuite } {
-  // Create temp directory for the so-files
+    // Create temp directory for the so-files
   mkdirSync(tmpDir, { recursive: true });
 
   const sharedObjectFilename = resolve(
@@ -175,8 +177,10 @@ export function init(tmpDir: string, args: neededArgs): { symbolname: string; me
     case "manual":
       r = initManual(sharedObjectFilename, args);
       break;
-    case "fiat":
-      r = initFiat(sharedObjectFilename, args);
+      case "fiat":
+
+          r = initFiat(sharedObjectFilename, args);
+
       break;
     case "bitcoin-core":
       r = initBitcoinCore(sharedObjectFilename, args);

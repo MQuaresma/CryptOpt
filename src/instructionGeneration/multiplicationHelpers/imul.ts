@@ -26,7 +26,7 @@ export function mul_imm_imul(c: CryptOpt.StringOperation): asm[] {
     oReg: c.name,
     in: [c.arguments[0]],
     allocationFlags:
-      AllocationFlags.DISALLOW_XMM | AllocationFlags.SAVE_FLAG_CF | AllocationFlags.SAVE_FLAG_OF,
+      AllocationFlags.DISALLOW_XMM | AllocationFlags.DISALLOW_MMX | AllocationFlags.SAVE_FLAG_CF | AllocationFlags.SAVE_FLAG_OF,
   });
 
   // TODO: Bound checks?

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { AllocationFlags, ByteRegister, Flags, Register, XmmRegister } from "@/enums";
+import { AllocationFlags, ByteRegister, Flags, Register, MmxRegister, XmmRegister } from "@/enums";
 
 import type { imm, mem } from "./Storage.type";
 
@@ -25,7 +25,7 @@ export interface AllocationReq {
 }
 export interface AllocationRes {
   oReg: Register[];
-  in: Array<XmmRegister | Register | mem | imm | Flags>;
+  in: Array<XmmRegister | MmxRegister | Register | mem | imm | Flags>;
 }
 
 /*u1*/
@@ -40,6 +40,10 @@ export type U1RegisterAllocation = {
 export type U1FlagAllocation = {
   datatype: "u1";
   store: Flags;
+};
+export type U1MmxRegisterAllocation = {
+  datatype: "u1";
+  store: MmxRegister;
 };
 export type U1XmmRegisterAllocation = {
   datatype: "u1";
@@ -57,6 +61,11 @@ export type U64RegisterAllocation = {
   store: Register;
 };
 
+export type U64MmxRegisterAllocation = {
+  datatype: "u64";
+  store: MmxRegister;
+};
+
 export type U64XmmRegisterAllocation = {
   datatype: "u64";
   store: XmmRegister;
@@ -65,9 +74,10 @@ export type U64XmmRegisterAllocation = {
 export type U1Allocation =
   | U1MemoryAllocation
   | U1RegisterAllocation
+  | U1MmxRegisterAllocation
   | U1XmmRegisterAllocation
   | U1FlagAllocation;
-export type U64Allocation = U64MemoryAllocation | U64RegisterAllocation | U64XmmRegisterAllocation;
+export type U64Allocation = U64MemoryAllocation | U64RegisterAllocation | U64MmxRegisterAllocation | U64XmmRegisterAllocation;
 export type U128Allocation = { datatype: "u128"; store?: undefined };
 export type MemoryAllocation = U1MemoryAllocation | U64MemoryAllocation;
 export type RegisterAllocation = U1RegisterAllocation | U64RegisterAllocation;
@@ -79,3 +89,4 @@ export type ValueAllocation = U1Allocation | U64Allocation;
 // probably add auto as store mem as well
 export type Allocation = ValueAllocation | PointerAllocation | U128Allocation;
 export type Allocations = { [key: string]: Allocation };
+export type PartialXmmAllocation = { [key: XmmRegister]: [Allocations] };

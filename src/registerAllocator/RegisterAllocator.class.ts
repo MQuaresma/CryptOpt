@@ -24,10 +24,12 @@ import {
   Flags,
   FlagState,
   Register,
+  MmxRegister,
   XmmRegister,
 } from "@/enums";
 import {
   ALL_XMM_REGISTERS,
+  ALL_MMX_REGISTERS,
   CALLER_SAVE_PREFIX,
   CALLER_SAVE_REGISTERS,
   CALLING_CONVENTION_REGISTER_ORDER,
@@ -48,6 +50,7 @@ import {
   isU1,
   isU64,
   isXD,
+  isMmxRegister,
   isXmmRegister,
   limbify,
   limbifyImm,
@@ -97,6 +100,7 @@ export class RegisterAllocator {
   private _preInstructions: asm[] = [];
   private _ALL_REGISTERS: Register[] = [];
   private _allocations: Allocations = {};
+  private _partial_allocations: PartialXmmAllocation = {};
   private _stack: { size: number; name: string }[] = [];
   private _clobbers = new Set<string>();
   private _flagState: {
@@ -204,6 +208,23 @@ export class RegisterAllocator {
     return fr;
   }
 
+  private getFreeMmxRegister(): MmxRegister | false {
+    this.addToPreInstructions(Logger.log(this.allocationString()) ?? "");
+    const allocatedMmxs = this.valuesAllocations
+      .map(({ store }) => store)
+      .filter((r) => isMmxRegister(r)) as MmxRegister[];
+
+    const freeMmxs = ALL_MMX_REGISTERS.filter((r) => !allocatedMmxs.includes(r));
+
+    if (freeMmxs.length == 0) {
+      this.addToPreInstructions(`; free mmx's: none`);
+      return false;
+    }
+
+    this.addToPreInstructions(`; free mmx's: ${freeMmxs}`);
+    return freeMmxs[0];
+  }
+
   /*
    * will not persist to _this._allocatons
    */
@@ -224,6 +245,10 @@ export class RegisterAllocator {
     return freeXmms[0];
   }
 
+  private isXmmFull(x: XmmRegister): boolean {
+    return (this._partial_allocations[x].length == 2);
+  }
+
   private get valuesAllocations(): ValueAllocation[] {
     return Object.values(this._allocations).filter((a) => "store" in a) as ValueAllocation[];
   }
@@ -231,6 +256,20 @@ export class RegisterAllocator {
   // Entries of [x5, ValueAllocation]
   private get entriesAllocations(): [string, ValueAllocation][] {
     return Object.entries(this._allocations).filter(([, a]) => "store" in a) as [string, ValueAllocation][];
+  }
+
+  /* Separating this one from xmm2reg because there might be/are more efficient ways of
+   * moving between the two and a scalar. Plus, if grouping is implemented, xmm2reg needs
+   * extra info for indexing.
+   */
+  public static mmx2reg({ store }: Pick<ValueAllocation, "store">): RegisterAllocation {
+    return RegisterAllocator.getInstance().moveMmxToReg({ store });
+  }
+  private moveMmxToReg({ store }: Pick<ValueAllocation, "store">): RegisterAllocation {
+    const varname = this.getVarnameFromStore({ store });
+    const dest = this.getW(varname);
+    this.addToPreInstructions(`movq ${dest}, ${store}; un-mmx-ify ${varname}`);
+    return this._allocations[varname] as RegisterAllocation;
   }
 
   /* will issue the instruction to preinst
@@ -367,8 +406,9 @@ export class RegisterAllocator {
       (matchXD(spareVariableName) || isCallerSave(spareVariableName) || matchArgPrefix(spareVariableName))
     ) {
       const freeXmm = RegisterAllocator._options?.xmm && this.getFreeXmmRegister();
-      // we cant always spill to xmms
+      // const freeMmx = RegisterAllocator._options?.xmm && this.getFreeMmxRegister();
 
+      // we cant always spill to xmms
       let choice = C_DI_SPILL_LOCATION.C_DI_MEM; // fallback
 
       // if we can and have a free xmm
@@ -405,9 +445,21 @@ export class RegisterAllocator {
           this.addToPreInstructions(inst);
           spilling_reg = reg;
         }
+
         this.addToPreInstructions(`movq ${freeXmm}, ${spilling_reg}; spilling ${spareVariableName} to xmm`);
+        // this.addToPreInstructions(`movq ${freeMmx}, ${spilling_reg}; spilling ${spareVariableName} to mmx`);
+        
+        // this._partial_allocations[freeXmm].append(this._allocations[spareVariableName]); //gather register to spill
+
+        // if (isXmmRegisterFull(freeXmm)) {
+        //   //TODO: emit instruction to spill registers to Xmm and then to stack && update allocation
+
+        //   delete this._partial_allocations[freeXmm];
+        //   this.addtoPreInstructions(`movdqu ${targetMem}, ${freeXmm}; spilling vector register to memory`);
+        // }
 
         this._allocations[spareVariableName].store = freeXmm as XmmRegister;
+        // this._allocations[spareVariableName].store = freeMmx as MmxRegister;
       }
     } else {
       // no need to spill (either unused or memory)
@@ -561,13 +613,19 @@ export class RegisterAllocator {
     }
 
     // If we have any xmm's, and we shouldn't have,
-    if (caf(AllocationFlags.DISALLOW_XMM) && inAllocationsTemp.some((a) => isXmmRegister(a))) {
+    if ((caf(AllocationFlags.DISALLOW_XMM) && inAllocationsTemp.some((a) => isXmmRegister(a))) ||
+        (caf(AllocationFlags.DISALLOW_MMX) && inAllocationsTemp.some((a) => isMmxRegister(a)))) {
       // we go though the current allocations
       inAllocationsTemp.forEach((store, i, arr) => {
         // and for each xmm reg
         if (isXmmRegister(store)) {
           // we move it to a reg
           const newReg = this.moveXmmToReg({ store });
+          // and splice that info into the register
+          arr.splice(i, 1, newReg.store);
+        } else if (isMmxRegister(store)) {
+          // we move it to a reg
+          const newReg = this.moveMmxToReg({ store });
           // and splice that info into the register
           arr.splice(i, 1, newReg.store);
         }
@@ -650,6 +708,7 @@ export class RegisterAllocator {
       };
       let movInst = "mov";
       if (isXmmRegister(oldAllocatedStore)) movInst = "movq";
+      if (isMmxRegister(oldAllocatedStore)) movInst = "movq";
       if (isByteRegister(oldAllocatedStore)) movInst = "movzx"; // not using zx() here, because we may want to movzx rdx, r9b
 
       // now check if rdx can be discarded:
@@ -678,7 +737,7 @@ export class RegisterAllocator {
             : oldAllocatedStore;
         }
         // if instead target to be in RDX is currently in memory (such as an arg1[0]) or in an Xmm,
-        else if (isMem(oldAllocatedStore) || isXmmRegister(oldAllocatedStore)) {
+        else if (isMem(oldAllocatedStore) || isXmmRegister(oldAllocatedStore) || isMmxRegister(oldAllocatedStore)) {
           this._clobbers.add(dVarname);
           // then we cant use xchg (would would kill mem) or is not defined for xmm
           // instead want to save current rdx in another reg
@@ -870,7 +929,7 @@ export class RegisterAllocator {
       // because of AllocationFlags.IN_0_AS_OUT_REGISTER, we want to have a register.
     ) {
       const isByte = isU1(allocation);
-      const inst = isByte ? "movzx" : isXmmRegister(allocation.store) ? "movq" : "mov";
+      const inst = isByte ? "movzx" : (isXmmRegister(allocation.store) || isMmxRegister(allocation.store)) ? "movq" : "mov";
       // allocate destination register for out[0]
       const backupReg = this.getW(outVarname) as Register;
       // and copy the value
@@ -1214,8 +1273,15 @@ export class RegisterAllocator {
       this._allocations[nameOfVar].store = reg;
       return reg;
     }
+    if (isMmxRegister(store)) {
+      this._clobbers.add(nameOfVar);
+      const reg = this.getW(nameOfVar);
+      this._preInstructions.push(`movq ${reg}, ${store}; loading ${nameOfVar} from spilled mmx`);
+      this._allocations[nameOfVar].store = reg;
+      return reg;
+    }
     throw new Error(
-      `Wanted to load ${nameOfVar} to a register, but thats not a memory reference nor a byte reg not xmm. Giving up.`,
+      `Wanted to load ${nameOfVar} to a register, but thats not a memory reference nor a byte reg not xmm mmx. Giving up.`,
     );
   }
 
@@ -1291,7 +1357,7 @@ export class RegisterAllocator {
     return `;-- allocation: ${sep}${this.entriesAllocations
       .filter(
         ([, { store }]) =>
-          isRegister(store) || isByteRegister(store) || isFlag(store) || isXmmRegister(store),
+          isRegister(store) || isByteRegister(store) || isFlag(store) || isXmmRegister(store) || isMmxRegister(store),
       )
       .sort(([, a], [, b]) => a.store.localeCompare(b.store))
       .map(([k, { store }]) => `${pad ? k.padStart(10) : k} ${store}`)
@@ -1335,6 +1401,20 @@ export class RegisterAllocator {
     }
     return { isNew: false, targetMem: toMem(Number(match[2]), arg_reg) };
   }
+
+  // Similar to _varToMemStr but pushes more than one variable to stack at once
+  // private _varvecToMem(varnames: [string]) : { targetMem: mem } {
+  //   varnames.forEach(vname => {
+  //     this._stack.push({
+  //       size: 64,
+  //       name: vname,
+  //     });
+  //   });
+
+  //   vec_index = this._stack.length-1;
+  //   vec_index -= this.availableRedzoneSize;
+  //   return toMem(vec_index, Register.rsp);
+  // }
 
   // for debugging only
   private _currentInst: CryptOpt.Argument | null = null;
@@ -1476,7 +1556,7 @@ export class RegisterAllocator {
         .map(([name, allo]) => {
           const dest = name.split(CALLER_SAVE_PREFIX)[1]; // like rbp
           const src = allo.store; // like xmm0 or [rsp + 0x08]
-          const instr = isXmmRegister(src) ? "movq" : "mov";
+          const instr = (isXmmRegister(src) || isMmxRegister(src)) ? "movq" : "mov";
           if (dest !== src) {
             return `${instr} ${dest}, ${src}; pop`;
           } else {

@@ -37,6 +37,7 @@ export function cmp(c: CryptOpt.StringOperation): asm[] {
   let allocationFlags: AllocationFlags =
     AllocationFlags.DISALLOW_ALL_MEM |
     AllocationFlags.DISALLOW_XMM |
+    AllocationFlags.DISALLOW_MMX |
     AllocationFlags.SAME_SIZE_READ |
     AllocationFlags.SAVE_FLAG_CF |
     AllocationFlags.SAVE_FLAG_OF;

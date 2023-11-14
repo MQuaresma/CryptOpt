@@ -15,7 +15,7 @@
  */
 
 import { AllocationFlags, Flags, Register } from "@/enums";
-import { isFlag, isXmmRegister, matchArg, SETX, toMem } from "@/helper";
+import { isFlag, isMmxRegister, isXmmRegister, matchArg, SETX, toMem } from "@/helper";
 import { RegisterAllocator } from "@/registerAllocator";
 import type { asm, CryptOpt, ValueAllocation } from "@/types";
 
@@ -41,6 +41,9 @@ export function mov(c: CryptOpt.StringOperation): asm[] {
     if (isXmmRegister(baseReg)) {
       const baseAlloc = ra.getCurrentAllocations()[m.base];
       baseReg = RegisterAllocator.xmm2reg(baseAlloc as ValueAllocation).store;
+    } else if (isMmxRegister(baseReg)) {
+      const baseAlloc = ra.getCurrentAllocations()[m.base];
+      baseReg = RegisterAllocator.mmx2reg(baseAlloc as ValueAllocation).store;
     }
 
     const memOut = toMem(m.offset, baseReg as Register);
@@ -51,7 +54,7 @@ export function mov(c: CryptOpt.StringOperation): asm[] {
     } else {
       // cause mov cannot take m64, m64, we may need to use a tmp register.
 
-      const instr = isXmmRegister(allocation.in[0]) ? "movq" : "mov";
+      const instr = (isXmmRegister(allocation.in[0]) || isMmxRegister(allocation.in[0])) ? "movq" : "mov";
       return [
         ...ra.pres,
         `${instr} ${memOut}, ${allocation.in[0]}; ${outMemAddr} = ${read}`, // and then this will put the data to the destination memory
@@ -82,7 +85,7 @@ export function conditionalMovZNZ(c: CryptOpt.StringOperation): asm[] {
       oReg: c.name,
       in: [zeroVarname, nzVarname],
       allocationFlags:
-        AllocationFlags.DISALLOW_XMM | AllocationFlags.IN_0_AS_OUT_REGISTER | AllocationFlags.DISALLOW_IMM,
+        AllocationFlags.DISALLOW_XMM |  AllocationFlags.DISALLOW_MMX | AllocationFlags.IN_0_AS_OUT_REGISTER | AllocationFlags.DISALLOW_IMM,
     });
     return [
       `; the job is: ${c.name[0]} = ${swVarname} !== 0 ? ${zeroVarname}: ${nzVarname}`,
@@ -100,6 +103,7 @@ export function conditionalMovZNZ(c: CryptOpt.StringOperation): asm[] {
       AllocationFlags.DISALLOW_MEM | // otherwise we'd need to specify the operand size of memory (for test?! dev not sure any more, should be ob to specify that, right?)
       AllocationFlags.DISALLOW_IMM | // cmov doesn't like imm's
       AllocationFlags.DISALLOW_XMM |
+      AllocationFlags.DISALLOW_MMX |
       AllocationFlags.IN_0_AS_OUT_REGISTER,
   });
   return [

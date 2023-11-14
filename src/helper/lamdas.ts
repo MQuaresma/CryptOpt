@@ -17,7 +17,7 @@
 import { mkdirSync, writeFileSync } from "fs";
 import { dirname } from "path";
 
-import { ByteRegister, Flags, FUNCTIONS, Register, XmmRegister } from "@/enums";
+import { ByteRegister, Flags, FUNCTIONS, Register, MmxRegister, XmmRegister } from "@/enums";
 import Logger from "@/helper/Logger.class";
 import type { Allocation, asm, CryptOpt, imm, mem, U1Allocation, U64Allocation } from "@/types";
 
@@ -124,6 +124,17 @@ export function isRegister(test: string | undefined | null): test is Register {
   }
   return false;
 }
+
+export function isMmxRegister(test: string | undefined | null): test is MmxRegister {
+    if (!test) {
+        return false;
+    }
+    for (const r in MmxRegister) {
+        if(r === test) return true;
+    }
+    return false;
+}
+
 export function isXmmRegister(test: string | undefined | null): test is XmmRegister {
   if (!test) {
     return false;

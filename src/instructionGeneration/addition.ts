@@ -16,7 +16,7 @@
 
 import { omit } from "lodash-es";
 
-import { delimbify, isFlag, isImm, isU1, isXmmRegister, limbify, TEMP_VARNAME } from "@/helper";
+import { delimbify, isFlag, isImm, isU1, isMmxRegister, isXmmRegister, limbify, TEMP_VARNAME } from "@/helper";
 import { Model } from "@/model";
 import { Paul } from "@/paul";
 import { RegisterAllocator } from "@/registerAllocator";
@@ -221,9 +221,14 @@ function add64(c: CryptOpt.StringOperation): asm[] {
     if (c.name[1]) {
       if (isXmmRegister(a_arg1.store)) {
         a_arg1 = RegisterAllocator.xmm2reg(a_arg1);
+      } else if (isMmxRegister(a_arg1.store)) {
+        a_arg1 = RegisterAllocator.mmx2reg(a_arg1);
       }
+
       if (isXmmRegister(a_arg2.store)) {
         a_arg2 = RegisterAllocator.xmm2reg(a_arg2);
+      } else if (isMmxRegister(a_arg2.store)) {
+        a_arg2 = RegisterAllocator.mmx2reg(a_arg2);
       }
     }
 

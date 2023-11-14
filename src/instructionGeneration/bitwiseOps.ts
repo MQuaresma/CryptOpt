@@ -124,6 +124,7 @@ function and(_c: CryptOpt.StringOperation): asm[] {
       AllocationFlags.IN_0_AS_OUT_REGISTER |
       AllocationFlags.SAME_SIZE_READ |
       AllocationFlags.DISALLOW_XMM |
+      AllocationFlags.DISALLOW_MMX |
       AllocationFlags.DISALLOW_IMM,
   });
   ra.declareFlagState(Flags.CF, FlagState.ZERO);
@@ -176,6 +177,7 @@ function and128(c: CryptOpt.StringOperation): asm[] {
         AllocationFlags.SAME_SIZE_READ |
         AllocationFlags.SAVE_FLAG_CF |
         AllocationFlags.DISALLOW_XMM |
+        AllocationFlags.DISALLOW_MMX |
         AllocationFlags.DISALLOW_IMM,
     });
     ra.declare128(c.name[0]);
@@ -197,6 +199,7 @@ function and128(c: CryptOpt.StringOperation): asm[] {
         AllocationFlags.SAVE_FLAG_OF |
         AllocationFlags.SAVE_FLAG_CF |
         AllocationFlags.DISALLOW_XMM |
+        AllocationFlags.DISALLOW_MMX |
         AllocationFlags.DISALLOW_IMM,
     });
 
@@ -233,6 +236,7 @@ function bzhi(_c: CryptOpt.StringOperation): asm[] {
       AllocationFlags.SAVE_FLAG_OF |
       AllocationFlags.SAVE_FLAG_CF |
       AllocationFlags.DISALLOW_XMM |
+      AllocationFlags.DISALLOW_MMX |
       AllocationFlags.DISALLOW_IMM,
   });
   ra.declareFlagState(Flags.CF, FlagState.KILLED);
@@ -269,6 +273,7 @@ function or(c: CryptOpt.StringOperation): asm[] {
       AllocationFlags.SAVE_FLAG_CF |
       AllocationFlags.IN_0_AS_OUT_REGISTER |
       AllocationFlags.DISALLOW_XMM |
+      AllocationFlags.DISALLOW_MMX |
       AllocationFlags.DISALLOW_IMM,
   });
   ra.declareFlagState(Flags.CF, FlagState.ZERO);
@@ -312,6 +317,7 @@ function xor(c: CryptOpt.StringOperation): asm[] {
       AllocationFlags.SAVE_FLAG_CF |
       AllocationFlags.IN_0_AS_OUT_REGISTER |
       AllocationFlags.DISALLOW_XMM |
+      AllocationFlags.DISALLOW_MMX |
       AllocationFlags.DISALLOW_IMM,
   });
   ra.declareFlagState(Flags.CF, FlagState.ZERO);

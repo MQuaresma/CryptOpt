@@ -29,6 +29,7 @@ export enum AllocationFlags {
   DISALLOW_IMM = 1 << 3,
   DISALLOW_XMM = 1 << 4,
   DISALLOW_MEM = 1 << 5,
+  DISALLOW_MMX = 1 << 6,
 
   SAVE_FLAG_OF = 1 << 10,
   SAVE_FLAG_CF = 1 << 11,

@@ -59,12 +59,9 @@ export class Optimizer {
 
   public constructor(private args: OptimizerArgs) {
     Paul.seed = args.seed;
-
     const randomString = sha1Hash(Math.ceil(Date.now() * Math.random())).toString(36);
     this.libcheckfunctionDirectory = join(tmpdir(), "CryptOpt.cache", randomString);
-
     const { measuresuite, symbolname } = init(this.libcheckfunctionDirectory, args);
-
     this.measuresuite = measuresuite;
     this.symbolname = symbolname;
 
@@ -131,7 +128,7 @@ export class Optimizer {
     }
   }
 
-  public optimise() {
+    public optimise() {
     return new Promise<number>((resolve) => {
       Logger.log("starting optimisation");
       printStartInfo({
@@ -379,7 +376,8 @@ export class Optimizer {
               Logger.log(`proofing that asm correct with '${proofCmd}'`);
               try {
                 const now = Date.now();
-                execSync(proofCmd, { shell: "/usr/bin/bash" });
+                execSync(proofCmd, { shell: "/bin/bash" });
+                //FIXME: execSync(proofCmd, { shell: "/usr/bin/bash" });
                 const timeForValidation = (Date.now() - now) / 1000;
                 appendFileSync(asmFile, `\n; validated in ${timeForValidation}s\n`);
                 globals.time.validate += timeForValidation;

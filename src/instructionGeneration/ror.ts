@@ -25,7 +25,7 @@ export function ror(c: CryptOpt.StringOperation): asm[] {
   const allocation = ra.allocate({
     oReg: c.name,
     in: [inVarname],
-    allocationFlags: AllocationFlags.DISALLOW_XMM,
+    allocationFlags: AllocationFlags.DISALLOW_XMM | AllocationFlags.DISALLOW_MMX,
   });
 
   const ins =
