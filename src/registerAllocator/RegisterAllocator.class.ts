@@ -79,6 +79,7 @@ import type {
   OptimizerArgs,
   PointerAllocation,
   RegisterAllocation,
+  XmmRegisterAllocation,
   U1FlagAllocation,
   ValueAllocation,
 } from "@/types";
@@ -281,17 +282,21 @@ export class RegisterAllocator {
   /* will issue the instruction to preinst
    * will update this._allocations
    */
-  public static xmm2reg({ store }: Pick<ValueAllocation, "store">): RegisterAllocation {
+  public static xmm2reg({ store, index }: Pick<XmmRegisterAllocation, "store" | "index">): RegisterAllocation {
     //   spareVariableName: string;
     //   targetReg: Register;
     //   spillingXmmReg: XmmRegister;
     // }): void {
-    return RegisterAllocator.getInstance().moveXmmToReg({ store });
+    return RegisterAllocator.getInstance().moveXmmToReg({ store, index });
   }
-  private moveXmmToReg({ store }: Pick<ValueAllocation, "store">): RegisterAllocation {
+  private moveXmmToReg({ store, index }: Pick<XmmRegisterAllocation, "store" | "index" >): RegisterAllocation {
     const varname = this.getVarnameFromStore({ store });
     const dest = this.getW(varname);
-    this.addToPreInstructions(`movq ${dest}, ${store}; un-xmm-ify ${varname} `);
+    if (index === 0) {
+      this.addToPreInstructions(`movq ${dest}, ${store}; un-xmm-ify ${varname} `);
+    } else if (index === 1) {
+      this.addToPreInstructions(`pextrq ${dest}, ${store}, 1; un-xmm-ify ${varname} `);
+    }
     return this._allocations[varname] as RegisterAllocation;
   }
 
@@ -454,7 +459,11 @@ export class RegisterAllocator {
 
         if (this.canXmm) {
           this.addToPreInstructions(`movq ${freeXmm}, ${spilling_reg}; spilling ${spareVariableName} to xmm`);
-          this._allocations[spareVariableName].store = freeXmm as XmmRegister;
+          this._allocations[spareVariableName] = { datatype: this._allocations[spareVariableName].datatype,
+                                                   store: freeXmm as XmmRegister,
+                                                   index: 0 } as XmmRegisterAllocation;
+          // this._allocations[spareVariableName].store = freeXmm as ;
+          // this._allocations[spareVariableName].index = 0;
         } else if (this.canMmx) {
           this.addToPreInstructions(`movq ${freeMmx}, ${spilling_reg}; spilling ${spareVariableName} to mmx`);
           this._allocations[spareVariableName].store = freeMmx as MmxRegister;
@@ -628,7 +637,7 @@ export class RegisterAllocator {
         // and for each xmm reg
         if (isXmmRegister(store)) {
           // we move it to a reg
-          const newReg = this.moveXmmToReg({ store });
+          const newReg = this.moveXmmToReg({ store: store, index: 0 }); //TODO: CHECK ME
           // and splice that info into the register
           arr.splice(i, 1, newReg.store);
         } else if (isMmxRegister(store)) {

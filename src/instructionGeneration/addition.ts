@@ -28,6 +28,7 @@ import type {
   U1MemoryAllocation,
   U1RegisterAllocation,
   U64Allocation,
+  XmmRegisterAllocation,
   ValueAllocation,
 } from "@/types";
 
@@ -220,13 +221,13 @@ function add64(c: CryptOpt.StringOperation): asm[] {
     // we need to get all xmm's into GP-regs, as we are interested in the COUT-Flag and we cant observe the cout with vector instructions
     if (c.name[1]) {
       if (isXmmRegister(a_arg1.store)) {
-        a_arg1 = RegisterAllocator.xmm2reg(a_arg1);
+        a_arg1 = RegisterAllocator.xmm2reg(a_arg1 as XmmRegisterAllocation);
       } else if (isMmxRegister(a_arg1.store)) {
         a_arg1 = RegisterAllocator.mmx2reg(a_arg1);
       }
 
       if (isXmmRegister(a_arg2.store)) {
-        a_arg2 = RegisterAllocator.xmm2reg(a_arg2);
+        a_arg2 = RegisterAllocator.xmm2reg(a_arg2 as XmmRegisterAllocation);
       } else if (isMmxRegister(a_arg2.store)) {
         a_arg2 = RegisterAllocator.mmx2reg(a_arg2);
       }

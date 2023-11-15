@@ -85,7 +85,7 @@ export function mulx(c: CryptOpt.StringOperation): asm[] {
 function makeArgRanR64(argR: string, ra: RegisterAllocator): string {
   // make sure we fix xmm's
   if (isXmmRegister(argR)) {
-    return RegisterAllocator.xmm2reg({ store: argR }).store;
+    return RegisterAllocator.xmm2reg({ store: argR, index: 0 }).store;
   }
   if (isMmxRegister(argR)){
     return RegisterAllocator.mmx2reg({ store: argR }).store;

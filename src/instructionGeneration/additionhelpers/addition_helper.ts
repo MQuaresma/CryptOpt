@@ -35,6 +35,7 @@ import type {
   asm,
   MemoryAllocation,
   RegisterAllocation,
+  XmmRegisterAllocation,
   U1Allocation,
   U1FlagAllocation,
   U1MemoryAllocation,
@@ -126,7 +127,7 @@ export function fr__rm_rm_rmf(
   // it still only contains a single bit of information.
   // to read it again, we need to movq it to an reg, then use it as an u1 (i.e. load flag with add to -1)
   if (cinXmm) {
-    cin = RegisterAllocator.xmm2reg(cin) as U1RegisterAllocation;
+    cin = RegisterAllocator.xmm2reg(cin as XmmRegisterAllocation) as U1RegisterAllocation;
   } else if (cinMmx) {
     cin = RegisterAllocator.mmx2reg(cin) as U1RegisterAllocation;
   }
@@ -230,7 +231,7 @@ export function r__rmf_rmf(out: string, arg0: ValueAllocation, arg1: ValueAlloca
 
   if (xmm0) {
     //x-
-    arg0 = RegisterAllocator.xmm2reg(arg0);
+    arg0 = RegisterAllocator.xmm2reg(arg0 as XmmRegisterAllocation);
     reg0 = true;
   } else if (mmx0) {
     arg0 = RegisterAllocator.mmx2reg(arg0);
@@ -238,7 +239,7 @@ export function r__rmf_rmf(out: string, arg0: ValueAllocation, arg1: ValueAlloca
   }
   if (xmm1) {
     //-x
-    arg1 = RegisterAllocator.xmm2reg(arg1);
+    arg1 = RegisterAllocator.xmm2reg(arg1 as XmmRegisterAllocation);
     reg1 = true;
   } else if (mmx1) {
     arg1 = RegisterAllocator.mmx2reg(arg1);
