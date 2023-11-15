@@ -137,6 +137,12 @@ export const parsedArgs = y
       "If this is set, CryptOpt will prefer spilling into vector registers as long as they are available, then start spilling into memory. Must specify --xmm switch, too. It will not try to optimize on it. (i.e. The first 16 values to be spilled will be spilled into XMMs, the rest into memory.)",
     boolean: true,
   })
+  .option("mmx", {
+    default: false,
+    describe:
+      "If this is set, CryptOpt will optimize considering to spill into technology registers rather than spilling solely into memory.",
+    boolean: true,
+  })
   .option("readState", {
     string: true,
     describe: "this must be a filename to a JSON, which has a state (to, body).",

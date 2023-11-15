@@ -34,6 +34,7 @@ export type OptimizerArgs = {
   jsonFile?: string;
   resultDir: string;
   xmm?: boolean;
+  mmx?: boolean;
   redzone: boolean;
   preferXmm?: boolean;
   framePointer: FRAME_POINTER_OPTIONS_T;

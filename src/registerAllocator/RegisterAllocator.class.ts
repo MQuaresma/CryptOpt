@@ -178,6 +178,12 @@ export class RegisterAllocator {
     }
     return false;
   }
+  private get canMmx(): boolean {
+    if (RegisterAllocator._options?.mmx) {
+      return RegisterAllocator._options.mmx == true;
+    }
+    return false;
+  }
   private constructor() {
     RegisterAllocator._instance = this;
     RegisterAllocator.reset();
@@ -406,14 +412,14 @@ export class RegisterAllocator {
       (matchXD(spareVariableName) || isCallerSave(spareVariableName) || matchArgPrefix(spareVariableName))
     ) {
       const freeXmm = RegisterAllocator._options?.xmm && this.getFreeXmmRegister();
-      // const freeMmx = RegisterAllocator._options?.xmm && this.getFreeMmxRegister();
+      const freeMmx = RegisterAllocator._options?.mmx && this.getFreeMmxRegister();
 
       // we cant always spill to xmms
       let choice = C_DI_SPILL_LOCATION.C_DI_MEM; // fallback
 
       // if we can and have a free xmm
-      if (this.canXmm && freeXmm) {
-        // consider XMMs.
+      if ((this.canXmm && freeXmm) || (this.canMmx && freeMmx)) {
+        // consider XMMs/MMXs.
 
         // we always want xmms if we prefer
         if (RegisterAllocator._options?.preferXmm) {
@@ -436,7 +442,7 @@ export class RegisterAllocator {
           this._allocations[spareVariableName].store = targetMem;
         }
       } else {
-        // spill to xmm
+        // spill to xmm/mmx
 
         // in case we rant to spill dl to xmm4
         if (isByteRegister(spilling_reg)) {
@@ -446,8 +452,13 @@ export class RegisterAllocator {
           spilling_reg = reg;
         }
 
-        this.addToPreInstructions(`movq ${freeXmm}, ${spilling_reg}; spilling ${spareVariableName} to xmm`);
-        // this.addToPreInstructions(`movq ${freeMmx}, ${spilling_reg}; spilling ${spareVariableName} to mmx`);
+        if (this.canXmm) {
+          this.addToPreInstructions(`movq ${freeXmm}, ${spilling_reg}; spilling ${spareVariableName} to xmm`);
+          this._allocations[spareVariableName].store = freeXmm as XmmRegister;
+        } else if (this.canMmx) {
+          this.addToPreInstructions(`movq ${freeMmx}, ${spilling_reg}; spilling ${spareVariableName} to mmx`);
+          this._allocations[spareVariableName].store = freeMmx as MmxRegister;
+        }
         
         // this._partial_allocations[freeXmm].append(this._allocations[spareVariableName]); //gather register to spill
 
@@ -457,9 +468,6 @@ export class RegisterAllocator {
         //   delete this._partial_allocations[freeXmm];
         //   this.addtoPreInstructions(`movdqu ${targetMem}, ${freeXmm}; spilling vector register to memory`);
         // }
-
-        this._allocations[spareVariableName].store = freeXmm as XmmRegister;
-        // this._allocations[spareVariableName].store = freeMmx as MmxRegister;
       }
     } else {
       // no need to spill (either unused or memory)
