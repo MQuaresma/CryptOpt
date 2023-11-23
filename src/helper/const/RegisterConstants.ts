@@ -1,4 +1,4 @@
-import { Register, MmxRegister, XmmRegister } from "@/enums";
+import { Register, MmxRegister, XmmRegister, XmmRegister_64 } from "@/enums";
 // that Array contains the order of the arguments, which are passed to the method
 export const CALLING_CONVENTION_REGISTER_ORDER = [
   Register.rdi, // First argument goes here
@@ -48,4 +48,23 @@ export const ALL_XMM_REGISTERS = [
   XmmRegister.xmm13,
   XmmRegister.xmm14,
   XmmRegister.xmm15,
+];
+
+export const ALL_XMM_REGISTERS_64 = [
+  XmmRegister_64.xmm0l,  XmmRegister_64.xmm0h,
+  XmmRegister_64.xmm1l,  XmmRegister_64.xmm1h,
+  XmmRegister_64.xmm2l,  XmmRegister_64.xmm2h,
+  XmmRegister_64.xmm3l,  XmmRegister_64.xmm3h,
+  XmmRegister_64.xmm4l,  XmmRegister_64.xmm4h,
+  XmmRegister_64.xmm5l,  XmmRegister_64.xmm5h,
+  XmmRegister_64.xmm6l,  XmmRegister_64.xmm6h,
+  XmmRegister_64.xmm7l,  XmmRegister_64.xmm7h,
+  XmmRegister_64.xmm8l,  XmmRegister_64.xmm8h,
+  XmmRegister_64.xmm9l,  XmmRegister_64.xmm9h,
+  XmmRegister_64.xmm10l, XmmRegister_64.xmm10h,
+  XmmRegister_64.xmm11l, XmmRegister_64.xmm11h,
+  XmmRegister_64.xmm12l, XmmRegister_64.xmm12h,
+  XmmRegister_64.xmm13l, XmmRegister_64.xmm13h,
+  XmmRegister_64.xmm14l, XmmRegister_64.xmm14h,
+  XmmRegister_64.xmm15l, XmmRegister_64.xmm15h,
 ];

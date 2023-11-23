@@ -22,7 +22,7 @@ import {
   FlagState,
   Register,
 } from "@/enums";
-import { isByteRegister, isMmxRegister, isXmmRegister, limbify, matchIMM, TEMP_VARNAME, zx } from "@/helper";
+import { isByteRegister, isMmxRegister, isXmmRegister_64, limbify, matchIMM, TEMP_VARNAME, zx } from "@/helper";
 import Logger from "@/helper/Logger.class";
 import { Paul } from "@/paul";
 import { RegisterAllocator } from "@/registerAllocator";
@@ -84,8 +84,8 @@ export function mulx(c: CryptOpt.StringOperation): asm[] {
 // will check that argR is not xmm/byte reg. If so, will issue preinstructions into RA, and return r64
 function makeArgRanR64(argR: string, ra: RegisterAllocator): string {
   // make sure we fix xmm's
-  if (isXmmRegister(argR)) {
-    return RegisterAllocator.xmm2reg({ store: argR, index: 0 }).store;
+  if (isXmmRegister_64(argR)) {
+    return RegisterAllocator.xmm2reg({ store: argR }).store;
   }
   if (isMmxRegister(argR)){
     return RegisterAllocator.mmx2reg({ store: argR }).store;

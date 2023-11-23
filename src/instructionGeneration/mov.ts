@@ -15,7 +15,7 @@
  */
 
 import { AllocationFlags, Flags, Register } from "@/enums";
-import { isFlag, isMmxRegister, isXmmRegister, matchArg, SETX, toMem } from "@/helper";
+import { isFlag, isMmxRegister, isXmmRegister_64, matchArg, SETX, toMem, isHighXmm, getQwHalfFromXmmReg } from "@/helper";
 import { RegisterAllocator } from "@/registerAllocator";
 import type { asm, CryptOpt, XmmRegisterAllocation, ValueAllocation } from "@/types";
 
@@ -38,12 +38,12 @@ export function mov(c: CryptOpt.StringOperation): asm[] {
       allocationFlags: AllocationFlags.DISALLOW_MEM,
     });
     let baseReg = allocation.in[1];
-    if (isXmmRegister(baseReg)) {
+    if (isXmmRegister_64(baseReg)) {
       const baseAlloc = ra.getCurrentAllocations()[m.base];
-      baseReg = RegisterAllocator.xmm2reg(baseAlloc as XmmRegisterAllocation).store;
+      baseReg = RegisterAllocator.xmm2reg(baseAlloc as ValueAllocation).store;
     } else if (isMmxRegister(baseReg)) {
       const baseAlloc = ra.getCurrentAllocations()[m.base];
-      baseReg = RegisterAllocator.mmx2reg(baseAlloc as XmmRegisterAllocation).store;
+      baseReg = RegisterAllocator.mmx2reg(baseAlloc as ValueAllocation).store;
     }
 
     const memOut = toMem(m.offset, baseReg as Register);
@@ -53,11 +53,12 @@ export function mov(c: CryptOpt.StringOperation): asm[] {
       return [...ra.pres, `mov qword ${memOut}, 0x0`, `${SETX[flag]} ${memOut};`];
     } else {
       // cause mov cannot take m64, m64, we may need to use a tmp register.
+      const instr = (isXmmRegister_64(allocation.in[0]) || isMmxRegister(allocation.in[0])) ? (isHighXmm(allocation.in[0]) ? "pextrq" : "movq") : "mov";
+      const store = isXmmRegister_64(allocation.in[0]) ? getQwHalfFromXmmReg(allocation.in[0]) : allocation.in[0];
 
-      const instr = (isXmmRegister(allocation.in[0]) || isMmxRegister(allocation.in[0])) ? "movq" : "mov";
       return [
-        ...ra.pres,
-        `${instr} ${memOut}, ${allocation.in[0]}; ${outMemAddr} = ${read}`, // and then this will put the data to the destination memory
+        ...ra.pres,  // and then this will put the data to the destination memory
+        `${instr} ${memOut}, ${store}${isHighXmm(allocation.in[0]) ? ", 0x01" : ""}; ${outMemAddr} = ${read}`,
       ];
     }
   } else {

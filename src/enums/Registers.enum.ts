@@ -106,3 +106,22 @@ export enum XmmRegister {
   xmm14 = "xmm14",
   xmm15 = "xmm15",
 }
+
+export enum XmmRegister_64 {
+  xmm0l = "xmm0l", xmm0h = "xmm0h",
+  xmm1l = "xmm1l", xmm1h = "xmm1h",
+  xmm2l = "xmm2l", xmm2h = "xmm2h",
+  xmm3l = "xmm3l", xmm3h = "xmm3h",
+  xmm4l = "xmm4l", xmm4h = "xmm4h",
+  xmm5l = "xmm5l", xmm5h = "xmm5h",
+  xmm6l = "xmm6l", xmm6h = "xmm6h",
+  xmm7l = "xmm7l", xmm7h = "xmm7h",
+  xmm8l = "xmm8l", xmm8h = "xmm8h",
+  xmm9l = "xmm9l", xmm9h = "xmm9h",
+  xmm10l = "xmm10l", xmm10h = "xmm10h",
+  xmm11l = "xmm11l", xmm11h = "xmm11h",
+  xmm12l = "xmm12l", xmm12h = "xmm12h",
+  xmm13l = "xmm13l", xmm13h = "xmm13h",
+  xmm14l = "xmm14l", xmm14h = "xmm14h",
+  xmm15l = "xmm15l", xmm15h = "xmm15h",
+}

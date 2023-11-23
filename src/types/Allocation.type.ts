@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { AllocationFlags, ByteRegister, Flags, Register, MmxRegister, XmmRegister } from "@/enums";
+import { AllocationFlags, ByteRegister, Flags, Register, MmxRegister, XmmRegister, XmmRegister_64 } from "@/enums";
 
 import type { imm, mem } from "./Storage.type";
 
@@ -47,8 +47,7 @@ export type U1MmxRegisterAllocation = {
 };
 export type U1XmmRegisterAllocation = {
   datatype: "u1";
-  store: XmmRegister;
-  index: number;
+  store: XmmRegister_64;
 };
 
 /*u64*/
@@ -69,8 +68,7 @@ export type U64MmxRegisterAllocation = {
 
 export type U64XmmRegisterAllocation = {
   datatype: "u64";
-  store: XmmRegister;
-  index: number;
+  store: XmmRegister_64;
 };
 
 export type U1Allocation =
@@ -92,4 +90,4 @@ export type ValueAllocation = U1Allocation | U64Allocation;
 // probably add auto as store mem as well
 export type Allocation = ValueAllocation | PointerAllocation | U128Allocation;
 export type Allocations = { [key: string]: Allocation };
-export type PartialXmmAllocation = { [key: XmmRegister]: [Allocations] };
+// export type PartialXmmAllocation = { [key: XmmRegister]: [Allocations] };
