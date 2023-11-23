@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { describe, expect, it, vi } from "vitest";
 
-import { AllocationFlags, C_DI_SPILL_LOCATION, DECISION_IDENTIFIER, Register, XmmRegister } from "@/enums";
+import { AllocationFlags, C_DI_SPILL_LOCATION, DECISION_IDENTIFIER, Register, XmmRegister_64 } from "@/enums";
 import { mov } from "@/instructionGeneration/mov";
 import type { AllocationReq, CryptOpt } from "@/types";
 
@@ -58,7 +58,7 @@ describe("instructionGeneration:limb", () => {
 
       return {
         oReg: [],
-        in: [XmmRegister.xmm0, Register.r10],
+        in: [XmmRegister_64.xmm0l, Register.r10],
       };
     });
     getCurrentAllocations.mockClear();

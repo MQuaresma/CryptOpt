@@ -79,10 +79,10 @@ const allocs = {
   x111: { datatype: "u64", store: "rcx" },
 
   x200: { datatype: "u64", store: "rax" },
-  x201: { datatype: "u64", store: "xmm2" },
+  x201: { datatype: "u64", store: "xmm2l" },
 
   // say a flag has been spilled to xmm it'll be pulled back to r64,
-  x210: { datatype: "u1", store: "xmm2" },
+  x210: { datatype: "u1", store: "xmm2l" },
   x211: { datatype: "u64", store: "r9" },
   x212: { datatype: "u64", store: "r8" },
 

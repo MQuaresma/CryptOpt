@@ -26,9 +26,9 @@ import {
   Flags,
   FlagState,
   Register,
-  XmmRegister,
+  XmmRegister_64,
 } from "@/enums";
-import { isByteRegister, isMem, isRegister, isXmmRegister, limbify, limbifyImm } from "@/helper";
+import { isByteRegister, isMem, isRegister, isXmmRegister_64, limbify, limbifyImm } from "@/helper";
 import { Model } from "@/model";
 import { Paul } from "@/paul";
 import { RegisterAllocator } from "@/registerAllocator";
@@ -513,7 +513,7 @@ describe("RegisterAllocator:", () => {
         out1: { datatype: "u64[n]", store: "rdi" },
         arg1: { datatype: "u64[n]", store: "rsi" },
         x65: { datatype: "u64", store: Register.rax },
-        x66: { datatype: "u64", store: XmmRegister.xmm1 },
+        x66: { datatype: "u64", store: XmmRegister_64.xmm1 },
       };
       const c: CryptOpt.StringOperation = {
         name: ["x68"],
@@ -545,7 +545,7 @@ describe("RegisterAllocator:", () => {
 
       expect(allocation.in).toHaveLength(2);
       allocation.in.forEach((ir) => {
-        expect(isXmmRegister(ir)).toBe(false);
+        expect(isXmmRegister_64(ir)).toBe(false);
       });
     });
 
