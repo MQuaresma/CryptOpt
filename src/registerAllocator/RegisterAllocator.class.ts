@@ -108,6 +108,7 @@ export class RegisterAllocator {
   private _partial_allocations: XmmRegister[] = []; // PartialXmmAllocation = {};
   private _stack: { size: number; name: string }[] = [];
   private _clobbers = new Set<string>();
+  private _mmx_dirty: boolean = false;
   private _flagState: {
     [f in Flags]: FlagState;
   } = {
@@ -246,7 +247,6 @@ export class RegisterAllocator {
       .map(({ store }) => store)
       .filter((r) => isXmmRegister_64(r)) as XmmRegister_64[];
 
-    console.log(allocatedXmms);
     const freeXmms = ALL_XMM_REGISTERS_64.filter((r) => !allocatedXmms.includes(r));
 
     if (freeXmms.length == 0) {
@@ -276,10 +276,6 @@ export class RegisterAllocator {
 
     this.addToPreInstructions(`; free xmm's: ${freeXmms}`);
     return freeXmms[0];
-  }
-
-  private isXmmFull(x: XmmRegister): boolean {
-    return (this._partial_allocations[x].length == 2);
   }
 
   private get valuesAllocations(): ValueAllocation[] {
@@ -489,6 +485,7 @@ export class RegisterAllocator {
           this.addToPreInstructions(`pinsrq ${freeXmm}, ${spilling_reg}, ${isHighXmm(freeXmm_64 as XmmRegister_64) ? 0x1 : 0x0}; spilling ${spareVariableName} to xmm`);
           this._allocations[spareVariableName].store = freeXmm_64 as XmmRegister_64;
         } else if (this.canMmx) {
+          this._mmx_dirty = true; //FIXME: set only once
           this.addToPreInstructions(`movq ${freeMmx}, ${spilling_reg}; spilling ${spareVariableName} to mmx`);
           this._allocations[spareVariableName].store = freeMmx as MmxRegister;
         }
@@ -1591,9 +1588,11 @@ export class RegisterAllocator {
 
   public finalize(): { pre: asm[]; stacklength: number; post: asm[] } {
     const stacklength = this._stack.length;
-
     const pre = [] as asm[];
     const post = ["ret"] as asm[];
+
+    // if MMX technology registers are dirty we need to flag them as empty
+    if(this._mmx_dirty) post.unshift("emms; empty MMX technology registers for ABI compliance");
 
     // basically if we have any mov [ rsp + ...] (rather than [rsp - ...])
     if (stacklength > this.availableRedzoneSize) {
