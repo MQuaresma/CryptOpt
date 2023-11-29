@@ -22,9 +22,10 @@ PATH           := $(NODE_DIR)/bin:$(PATH)
 
 BUILT_CRYPTOPT := $(ROOT)/dist/CryptOpt.js
 
-.PHONY: all build check clean deepclean jasmin
+.PHONY: all dev deps deps_dev build check clean deepclean jasmin node_modules_dev
 
-all: clean $(BUILT_CRYPTOPT)
+all: clean deps $(BUILT_CRYPTOPT)
+dev: clean deps_dev $(BUILT_CRYPTOPT)
 build: $(BUILT_CRYPTOPT)
 
 $(NODE):
@@ -32,7 +33,12 @@ $(NODE):
 	curl -L https://nodejs.org/dist/v$(NODE_VERSION)/node-v$(NODE_VERSION)-linux-x64.tar.xz | tar --extract --xz --directory ./bins
 	mv -f ./bins/node-v$(NODE_VERSION)-linux-x64 "$(NODE_DIR)"
 
-node_modules: 
+node_modules_dev:
+	@echo "Installing dependencies"
+	@npm install --save ../MeasureSuite
+	@npm $$(test -e ./package-lock.json && echo 'clean-install' || echo "install")
+
+node_modules:
 	@echo "Installing dependencies"
 	@CFLAGS="-I$(NODE_DIR)/include" PATH=$(PATH) npm $$(test -e ./package-lock.json && echo 'clean-install' || echo "install")
 
@@ -42,12 +48,15 @@ FIAT_BINARIES=unsaturated_solinas word_by_word_montgomery dettman_multiplication
 $(FIAT_CHECKSUMS): $(addprefix $(FIAT_DATA_DIR)/, $(FIAT_BINARIES))
 	cd $(FIAT_DATA_DIR) && sha256sum $(FIAT_BINARIES) > $(notdir $(FIAT_CHECKSUMS))
 
-$(BUILT_CRYPTOPT): $(NODE) node_modules $(shell find ./src -type f -name '*ts') $(FIAT_CHECKSUMS)
+deps: $(NODE) node_modules $(shell find ./src -type f -name '*ts') $(FIAT_CHECKSUMS)
+deps_dev: node_modules_dev $(shell find ./src -type f -name '*ts') $(FIAT_CHECKSUMS)
+
+$(BUILT_CRYPTOPT):
 	@echo "Building CryptOpt"
 	@PATH=$(PATH) npm run bundle
 	@test -e "$(@)" && touch $(@) && echo "Successfully built CryptOpt. :)"
 
-check: $(BUILT_CRYPTOPT)
+check: deps $(BUILT_CRYPTOPT)
 	PATH=$(PATH) npm run test-no-watch
 
 clean:
@@ -69,7 +78,7 @@ bundle.tar.gz: $(BUNDLE_FILES)
 bundle.zip: $(BUNDLE_FILES)
 	zip ${@} $(^)
 
-jasmin: $(BUILT_CRYPTOPT)
+jasmin: deps $(BUILT_CRYPTOPT)
 	clear
 	./CryptOpt --bridge jasmin --verbose  --seed 123456
 

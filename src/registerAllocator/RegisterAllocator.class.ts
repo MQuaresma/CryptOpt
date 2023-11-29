@@ -191,6 +191,7 @@ export class RegisterAllocator {
     }
     return false;
   }
+
   private constructor() {
     RegisterAllocator._instance = this;
     RegisterAllocator.reset();
