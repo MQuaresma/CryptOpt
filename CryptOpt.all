@@ -22,12 +22,9 @@ set -e
 # where CryptOpt has been unpacked to
 INSTALLDIR="$(dirname "${0}")"
 
-# If AssemblyLine was installed locally, set the dynamic linker to search
-# for it in the proper place
-if [ $(pkg-config --libs assemblyline | cut -d ' ' -f1 | sed -e 's/-L//g') != '/usr/local/lib' ]; then
-  export LD_LIBRARY_PATH=~/AssemblyLine
-  export DYLD_LIBRARY_PATH=~/AssemblyLine
-fi
+# go into the Install directory. Everything is relative from there
+cd "${INSTALLDIR}"
 
+#run
 /usr/bin/env node \
   "./dist/CryptOpt.js" "${@}"
