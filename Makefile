@@ -22,6 +22,8 @@ PATH           := $(NODE_DIR)/bin:$(PATH)
 
 BUILT_CRYPTOPT := $(ROOT)/dist/CryptOpt.js
 
+OS = $(shell uname -s | tr '[:upper]' '[:lower:])
+
 .PHONY: all dev deps deps_dev build check clean deepclean jasmin node_modules_dev
 
 all: clean deps $(BUILT_CRYPTOPT)
@@ -45,7 +47,7 @@ node_modules:
 	@echo "Installing dependencies"
 	@CFLAGS="-I$(NODE_DIR)/include" PATH=$(PATH) npm $$(test -e ./package-lock.json && echo 'clean-install' || echo "install")
 
-FIAT_DATA_DIR=src/bridge/fiat-bridge/data
+FIAT_DATA_DIR=src/bridge/fiat-bridge/data/$(OS)
 FIAT_CHECKSUMS=$(FIAT_DATA_DIR)/sha256sums
 FIAT_BINARIES=unsaturated_solinas word_by_word_montgomery dettman_multiplication solinas_reduction
 $(FIAT_CHECKSUMS): $(addprefix $(FIAT_DATA_DIR)/, $(FIAT_BINARIES))

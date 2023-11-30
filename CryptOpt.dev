@@ -25,8 +25,8 @@ INSTALLDIR="$(dirname "${0}")"
 # If AssemblyLine was installed locally, set the dynamic linker to search
 # for it in the proper place
 if [ $(pkg-config --libs assemblyline | cut -d ' ' -f1 | sed -e 's/-L//g') != '/usr/local/lib' ]; then
-  export LD_LIBRARY_PATH=~/AssemblyLine
-  export DYLD_LIBRARY_PATH=~/AssemblyLine
+  export LD_LIBRARY_PATH=$(pkg-config --libs assemblyline | cut -d ' ' -f1 | sed -e 's/-L//g')
+  export DYLD_LIBRARY_PATH=$(pkg-config --libs assemblyline | cut -d ' ' -f1 | sed -e 's/-L//g')
 fi
 
 /usr/bin/env node \
