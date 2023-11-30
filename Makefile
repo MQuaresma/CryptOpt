@@ -22,7 +22,7 @@ PATH           := $(NODE_DIR)/bin:$(PATH)
 
 BUILT_CRYPTOPT := $(ROOT)/dist/CryptOpt.js
 
-OS = $(shell uname -s | tr '[:upper]' '[:lower:])
+OS = $(shell uname -s | tr '[:upper:]' '[:lower:]')
 
 .PHONY: all dev deps deps_dev build check clean deepclean jasmin node_modules_dev
 

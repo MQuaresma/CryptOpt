@@ -2,6 +2,7 @@ import strip from "@rollup/plugin-strip";
 import typescript from "@rollup/plugin-typescript";
 import terser from "@rollup/plugin-terser";
 import copy from "rollup-plugin-copy";
+import os from "os";
 
 const external = [
   "child_process",
@@ -42,7 +43,7 @@ export default [
             dest: "./dist/data/jasmin-bridge",
           },
           {
-            src: ["src/bridge/fiat-bridge/data/*"],
+            src: `src/bridge/fiat-bridge/data/${os.platform()}/*`,
             dest: "./dist/data/fiat-bridge",
           },
           {

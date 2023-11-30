@@ -133,7 +133,7 @@ export class JasminBridge {
       throw Error(`filename must end with .so, but instead is '${filename}'`);
     }
 
-    const opts = { env, cwd, shell: "/usr/bin/bash" };
+    const opts = { env, cwd, shell: "/bin/bash" };
 
     const command = `${CC} ${CFLAGS} -fPIC -shared -o ${filename} ${this.filenameS}`;
     Logger.log(`cmd to generate machinecode: ${command} w opts: ${JSON.stringify(opts)}`);
