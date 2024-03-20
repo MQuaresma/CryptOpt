@@ -16,7 +16,7 @@
 
 import { omit } from "lodash-es";
 
-import { delimbify, isFlag, isImm, isU1, isMmxRegister, isXmmRegister_64, limbify, TEMP_VARNAME } from "@/helper";
+import { delimbify, isFlag, isImm, isU1, isMmxRegister, isXmmRegister, isXmmRegister_64, limbify, TEMP_VARNAME } from "@/helper";
 import { Model } from "@/model";
 import { Paul } from "@/paul";
 import { RegisterAllocator } from "@/registerAllocator";
@@ -31,7 +31,7 @@ import type {
   ValueAllocation,
 } from "@/types";
 
-import { fr__rm_rm, fr__rm_rm_rmf, fr_rm_f_f, r__rm_f_f, r__rm_rm_rmf, r__rmf_rmf } from "./additionhelpers";
+import { fr__rm_rm, fr__rm_rm_rmf, fr_rm_f_f, r__rm_f_f, r__rm_rm_rmf, r__rmf_rmf, v__vm_vm } from "./additionhelpers";
 
 export function add(c: CryptOpt.StringOperation): asm[] {
   // Step 1 Find out, what to do and get allocations: highlevel
@@ -219,13 +219,13 @@ function add64(c: CryptOpt.StringOperation): asm[] {
 
     // we need to get all xmm's into GP-regs, as we are interested in the COUT-Flag and we cant observe the cout with vector instructions
     if (c.name[1]) {
-      if (isXmmRegister_64(a_arg1.store)) {
+      if (isXmmRegister(a_arg1.store)) {
         a_arg1 = RegisterAllocator.xmm2reg(a_arg1);
       } else if (isMmxRegister(a_arg1.store)) {
         a_arg1 = RegisterAllocator.mmx2reg(a_arg1);
       }
 
-      if (isXmmRegister_64(a_arg2.store)) {
+      if (isXmmRegister(a_arg2.store)) {
         a_arg2 = RegisterAllocator.xmm2reg(a_arg2);
       } else if (isMmxRegister(a_arg2.store)) {
         a_arg2 = RegisterAllocator.mmx2reg(a_arg2);
@@ -304,8 +304,15 @@ function add64(c: CryptOpt.StringOperation): asm[] {
     }
   } else {
     const a_arg0 = allocations[c.arguments[0]] as ValueAllocation;
+    const no_flag_imm_ops = !isFlag(a_arg0.store) && !isFlag(a_arg1.store) && !isImm(a_arg0.store) && !isImm(a_arg1.store);
+
     // two operands, no cout
     //
+    if(no_flag_imm_ops && (isXmmRegister(a_arg0.store) || isMmxRegister(a_arg0.store) || 
+                          isXmmRegister(a_arg1.store) || isMmxRegister(a_arg1.store))) {
+      return [`; v__vm_vm`, ...v__vm_vm(c.name[0], a_arg0, a_arg1)];
+    } 
+
     return [`; r__rm_rm_rmf`, ...r__rmf_rmf(c.name[0], a_arg0, a_arg1)];
   }
 }

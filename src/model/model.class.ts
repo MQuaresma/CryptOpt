@@ -206,19 +206,20 @@ export class Model {
    * @param candidates is a list of variable names like xNN, argNN, ...
    * returns the one that we, in the current ordering, read last.
    */
-  public static chooseSpillValue(candidates: string[]): string {
+  public static chooseSpillValue(candidates: string[]): [string, boolean] {
+    //TODO: check if instruction supports memory operands
     if (candidates.length < 1) {
       throw new Error("cannot choose from nothing, mate");
     }
     // well, not much to choose from, right?
     if (candidates.length === 1) {
-      return candidates[0];
+      return [candidates[0], false];
     }
     // check if there is caller saves in there
     const filtered = candidates.filter(isCallerSave);
     if (filtered.length > 0) {
       // if so, just return the first one
-      return filtered[0];
+      return [filtered[0], false];
     }
 
     const m = Model.getInstance();
@@ -240,7 +241,7 @@ export class Model {
     });
 
     // and return it's name
-    return lastRead[0];
+    return [lastRead[0], false];
   }
 
   public static mutatePermutation(): void {

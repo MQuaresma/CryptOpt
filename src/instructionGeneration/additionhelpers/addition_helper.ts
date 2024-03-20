@@ -29,7 +29,7 @@
  * They will also take care of the allocation and new allocation of the results. (name of out-flag and out-reg)
  */
 
-import { isByteRegister, isFlag, isMem, isNotNoU, isRegister, isMmxRegister, isXmmRegister_64 } from "@/helper";
+import { isByteRegister, isFlag, isMem, isNotNoU, isRegister, isMmxRegister, isXmmRegister_64, isXmmRegister } from "@/helper";
 import { RegisterAllocator } from "@/registerAllocator";
 import type {
   asm,
@@ -68,6 +68,10 @@ import {
   r__r_r_m,
   r__r_r_r,
 } from "./r__rm_rm_rmf";
+import {
+  v__v_v,
+  v__v_m,
+} from "./v__v_vm";
 import { r__f_f, r__m_f, r__m_m, r__r_f, r__r_m, r__r_r } from "./r__rmf_rmf";
 
 export function fr__rm_rm(cout: string, out: string, arg0: ValueAllocation, arg1: ValueAllocation): asm[] {
@@ -119,7 +123,7 @@ export function fr__rm_rm_rmf(
 
   const cinFlag = isFlag(cin.store);
   const cinMem = isMem(cin.store);
-  const cinXmm = isXmmRegister_64(cin.store);
+  const cinXmm = isXmmRegister(cin.store);
   const cinMmx = isMmxRegister(cin.store); //maybe we can optimize this, since it can only be either in Xmm or Mmx or Memory
 
   // a bit of a hack... lets see how long it takes until this breaks my neck and I need to implement it properly
@@ -219,26 +223,25 @@ export function fr__rm_rm_rmf(
 export function r__rmf_rmf(out: string, arg0: ValueAllocation, arg1: ValueAllocation): asm[] {
   const flag0 = isFlag(arg0.store);
   const mem0 = isMem(arg0.store);
-  const xmm0 = isXmmRegister_64(arg0.store);
   const mmx0 = isMmxRegister(arg0.store);
-  let reg0 = !flag0 && !mem0 && !xmm0 && !mmx0;
+  const xmm0 = isXmmRegister(arg0.store);
+  let reg0 = !flag0 && !mem0 && !mmx0 && !xmm0;
 
   const flag1 = isFlag(arg1.store);
   const mem1 = isMem(arg1.store);
-  const xmm1 = isXmmRegister_64(arg1.store);
   const mmx1 = isMmxRegister(arg1.store);
-  let reg1 = !flag1 && !mem1 && !xmm1 && !mmx1;
+  const xmm1 = isXmmRegister(arg1.store);
+  let reg1 = !flag1 && !mem1 && !mmx1 && !xmm1;
 
   if (xmm0) {
-    //x-
     arg0 = RegisterAllocator.xmm2reg(arg0);
     reg0 = true;
   } else if (mmx0) {
     arg0 = RegisterAllocator.mmx2reg(arg0);
     reg0 = true;
   }
+
   if (xmm1) {
-    //-x
     arg1 = RegisterAllocator.xmm2reg(arg1);
     reg1 = true;
   } else if (mmx1) {
@@ -299,5 +302,47 @@ export function r__rmf_rmf(out: string, arg0: ValueAllocation, arg1: ValueAlloca
     return r__r_f(out, arg1 as RegisterAllocation, arg0 as U1FlagAllocation);
   }
 
-  throw new Error("arguments are not  rr / rm / rf / mm / mf / ff. Abort");
+    throw new Error("arguments are not  rr / rm / rf / mm / mf / ff. Abort");
+}
+
+export function v__vm_vm(out: string, arg0: ValueAllocation, arg1: ValueAllocation): asm[] {
+  /**
+   * If the args are in incompatible types (e.g. scalar & vector OR flag & vector)
+   * we need to move one of them to a register of the same type.
+   * In this case : vector -> scalar
+   * rr
+   */
+  let xmm0 = isXmmRegister(arg0.store);
+  let mmx0 = isMmxRegister(arg0.store);
+  let mem0 = isMem(arg0.store);
+  let reg0 = !mem0 && !mmx0 && !xmm0;
+
+  let xmm1 = isXmmRegister(arg1.store);
+  let mmx1 = isMmxRegister(arg1.store);
+  let mem1 = isMem(arg1.store);
+  let reg1 = !mem1 && !mmx1 && !xmm1;
+
+  if (xmm0 && (mmx1 || reg1)) {
+    arg1 = RegisterAllocator.reg2xmm(arg1);
+    xmm1 = true;
+    mmx1 = false;
+    reg1 = false;
+  } else if ((mmx0 || reg0) && xmm1) {
+    arg0 = RegisterAllocator.reg2xmm(arg0);
+    xmm0 = true;
+    mmx0 = false;
+    reg0 = false;
+  }
+
+  if (xmm0 && xmm1) {
+    return v__v_v(out, arg0 as RegisterAllocation, arg1 as RegisterAllocation);
+  } 
+  if (xmm0 && mem1) {
+    return v__v_m(out, arg0 as RegisterAllocation, arg1 as MemoryAllocation);
+  } 
+  if (mem0 && xmm1) {
+    return v__v_m(out, arg1 as RegisterAllocation, arg0 as MemoryAllocation);
+  }
+
+  throw new Error("arguments are not vv, vm, mv. Abort");
 }

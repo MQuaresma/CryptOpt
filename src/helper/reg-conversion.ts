@@ -88,23 +88,24 @@ export function getDwordRegFromQwReg(reg: Register): DwordRegister {
 }
 
 export function getQwHalfFromXmmReg(reg: XmmRegister_64): XmmRegister {
-  const mapping: { [reg in XmmRegister_64]: XmmRegister } = {
-    [XmmRegister_64.xmm0l] : XmmRegister.xmm0,   [XmmRegister_64.xmm0h] : XmmRegister.xmm0,
-    [XmmRegister_64.xmm1l] : XmmRegister.xmm1,   [XmmRegister_64.xmm1h] : XmmRegister.xmm1,
-    [XmmRegister_64.xmm2l] : XmmRegister.xmm2,   [XmmRegister_64.xmm2h] : XmmRegister.xmm2,
-    [XmmRegister_64.xmm3l] : XmmRegister.xmm3,   [XmmRegister_64.xmm3h] : XmmRegister.xmm3,
-    [XmmRegister_64.xmm4l] : XmmRegister.xmm4,   [XmmRegister_64.xmm4h] : XmmRegister.xmm4,
-    [XmmRegister_64.xmm5l] : XmmRegister.xmm5,   [XmmRegister_64.xmm5h] : XmmRegister.xmm5,
-    [XmmRegister_64.xmm6l] : XmmRegister.xmm6,   [XmmRegister_64.xmm6h] : XmmRegister.xmm6,
-    [XmmRegister_64.xmm7l] : XmmRegister.xmm7,   [XmmRegister_64.xmm7h] : XmmRegister.xmm7,
-    [XmmRegister_64.xmm8l] : XmmRegister.xmm8,   [XmmRegister_64.xmm8h] : XmmRegister.xmm8,
-    [XmmRegister_64.xmm9l] : XmmRegister.xmm9,   [XmmRegister_64.xmm9h] : XmmRegister.xmm9,
-    [XmmRegister_64.xmm10l] : XmmRegister.xmm10, [XmmRegister_64.xmm10h] : XmmRegister.xmm10,
-    [XmmRegister_64.xmm11l] : XmmRegister.xmm11, [XmmRegister_64.xmm11h] : XmmRegister.xmm11,
-    [XmmRegister_64.xmm12l] : XmmRegister.xmm12, [XmmRegister_64.xmm12h] : XmmRegister.xmm12,
-    [XmmRegister_64.xmm13l] : XmmRegister.xmm13, [XmmRegister_64.xmm13h] : XmmRegister.xmm13,
-    [XmmRegister_64.xmm14l] : XmmRegister.xmm14, [XmmRegister_64.xmm14h] : XmmRegister.xmm14,
-    [XmmRegister_64.xmm15l] : XmmRegister.xmm15, [XmmRegister_64.xmm15h] : XmmRegister.xmm15,
-  };
-  return mapping[reg];
+//  const mapping: { [reg in XmmRegister_64]: XmmRegister } = {
+//    [XmmRegister_64.xmm0l] : XmmRegister.xmm0,   [XmmRegister_64.xmm0h] : XmmRegister.xmm0,
+//    [XmmRegister_64.xmm1l] : XmmRegister.xmm1,   [XmmRegister_64.xmm1h] : XmmRegister.xmm1,
+//    [XmmRegister_64.xmm2l] : XmmRegister.xmm2,   [XmmRegister_64.xmm2h] : XmmRegister.xmm2,
+//    [XmmRegister_64.xmm3l] : XmmRegister.xmm3,   [XmmRegister_64.xmm3h] : XmmRegister.xmm3,
+//    [XmmRegister_64.xmm4l] : XmmRegister.xmm4,   [XmmRegister_64.xmm4h] : XmmRegister.xmm4,
+//    [XmmRegister_64.xmm5l] : XmmRegister.xmm5,   [XmmRegister_64.xmm5h] : XmmRegister.xmm5,
+//    [XmmRegister_64.xmm6l] : XmmRegister.xmm6,   [XmmRegister_64.xmm6h] : XmmRegister.xmm6,
+//    [XmmRegister_64.xmm7l] : XmmRegister.xmm7,   [XmmRegister_64.xmm7h] : XmmRegister.xmm7,
+//    [XmmRegister_64.xmm8l] : XmmRegister.xmm8,   [XmmRegister_64.xmm8h] : XmmRegister.xmm8,
+//    [XmmRegister_64.xmm9l] : XmmRegister.xmm9,   [XmmRegister_64.xmm9h] : XmmRegister.xmm9,
+//    [XmmRegister_64.xmm10l] : XmmRegister.xmm10, [XmmRegister_64.xmm10h] : XmmRegister.xmm10,
+//    [XmmRegister_64.xmm11l] : XmmRegister.xmm11, [XmmRegister_64.xmm11h] : XmmRegister.xmm11,
+//    [XmmRegister_64.xmm12l] : XmmRegister.xmm12, [XmmRegister_64.xmm12h] : XmmRegister.xmm12,
+//    [XmmRegister_64.xmm13l] : XmmRegister.xmm13, [XmmRegister_64.xmm13h] : XmmRegister.xmm13,
+//    [XmmRegister_64.xmm14l] : XmmRegister.xmm14, [XmmRegister_64.xmm14h] : XmmRegister.xmm14,
+//    [XmmRegister_64.xmm15l] : XmmRegister.xmm15, [XmmRegister_64.xmm15h] : XmmRegister.xmm15,
+//  };
+  //return mapping[reg];
+  return reg as XmmRegister;
 }

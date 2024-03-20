@@ -19,7 +19,7 @@ import { dirname } from "path";
 
 import { ByteRegister, Flags, FUNCTIONS, Register, MmxRegister, XmmRegister, XmmRegister_64 } from "@/enums";
 import Logger from "@/helper/Logger.class";
-import type { Allocation, asm, CryptOpt, imm, mem, U1Allocation, U64Allocation } from "@/types";
+import type { Allocation, asm, CryptOpt, imm, mem, U1Allocation, U64Allocation, U64XmmRegisterAllocation } from "@/types";
 
 import {
   ARG_PREFIX,
@@ -159,7 +159,7 @@ export function isXmmRegister(test: string | undefined | null): test is XmmRegis
   for (const r in XmmRegister) {
     if (r === test) return true;
   }
-  return false;
+  return isXmmRegister_64(test); //check the pseudo-variants too as these are still XmmRegisters under-the-hood
 }
 
 export function isByteRegister(test: string | undefined | null): test is ByteRegister {
@@ -228,6 +228,9 @@ export const isU64 = (va: Allocation | undefined | null): va is U64Allocation =>
 
 export const isU1 = (va: Allocation | undefined | null): va is U1Allocation =>
   (va && "datatype" in va && va.datatype === "u1") || false;
+
+export const isU64Partial = (va: Allocation | undefined | null): va is U64XmmRegisterAllocation => // TODO: add | U64MmxRegisterAllocation =>
+  (va && "datatype" in va && va.datatype === "u64" && isXmmRegister(va.store)) || false;
 
 export const assertStringArguments: (
   c: CryptOpt.Argument,
