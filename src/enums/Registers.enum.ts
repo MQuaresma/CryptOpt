@@ -126,7 +126,7 @@ export enum XmmRegister_64 {
   xmm15 = "xmm15",
 }
 
-
+export type AnyRegister = ByteRegister | Register | MmxRegister | XmmRegister;
 
 // export enum XmmRegister_64 {
 //   xmm0l = "xmm0l", xmm0h = "xmm0h",

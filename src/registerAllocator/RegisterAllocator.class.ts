@@ -27,6 +27,7 @@ import {
   MmxRegister,
   XmmRegister,
   XmmRegister_64,
+  AnyRegister,
 } from "@/enums";
 import {
   ALL_XMM_REGISTERS,
@@ -55,6 +56,7 @@ import {
   isMmxRegister,
   isXmmRegister,
   isXmmRegister_64,
+  isVecRegister,
   isHighXmm,
   limbify,
   limbifyImm,
@@ -71,7 +73,7 @@ import Logger from "@/helper/Logger.class";
 import { getByteRegFromQwReg, getQwRegFromByteReg, getQwHalfFromXmmReg } from "@/helper/reg-conversion";
 import { Model } from "@/model";
 import { Paul } from "@/paul";
-import type {
+import {
   Allocation,
   AllocationReq,
   AllocationRes,
@@ -83,9 +85,11 @@ import type {
   OptimizerArgs,
   PointerAllocation,
   RegisterAllocation,
+  MmxRegisterAllocation,
   XmmRegisterAllocation,
   U1FlagAllocation,
   ValueAllocation,
+  RegType,
 } from "@/types";
 
 import { populateClobbers } from "./RegisterAllocator.helper";
@@ -331,7 +335,7 @@ export class RegisterAllocator {
   }
   private moveRegToXmm({ store }: Pick<ValueAllocation, "store">): XmmRegisterAllocation {
     const varname = this.getVarnameFromStore({ store });
-    const vecStore = this.getWVec(varname, "u64");
+    const vecStore = this.getWVec(varname, RegType.XMMRegister);
     const dest = isXmmRegister_64(vecStore) ? getQwHalfFromXmmReg(vecStore as XmmRegister_64) : vecStore;
 
     if(isMmxRegister(store)) {
@@ -341,6 +345,23 @@ export class RegisterAllocator {
       this.addToPreInstructions(`movq ${dest}, ${store}; xmm-ify ${varname}`);
     }
     return this._allocations[varname] as XmmRegisterAllocation;
+  }
+
+
+  public static reg2mmx({ store }: Pick<ValueAllocation, "store">): MmxRegisterAllocation {
+    return RegisterAllocator.getInstance().moveRegToMmx({ store });
+  } 
+  private moveRegToMmx({ store }: Pick<ValueAllocation, "store">): MmxRegisterAllocation {
+    const varname = this.getVarnameFromStore({ store });
+    const dest = this.getWVec(varname, RegType.MMXRegister);
+
+    if(isXmmRegister(store)) {
+      this.addToPreInstructions(`movdq2q ${dest}, ${store}; mmx-ify ${varname}`);
+    } else {
+      // assume it's an x86 register
+      this.addToPreInstructions(`movq ${dest}, ${store}; mmx-ify ${varname}`);
+    }
+    return this._allocations[varname] as MmxRegisterAllocation;
   }
 
 
@@ -549,23 +570,23 @@ export class RegisterAllocator {
     this._allocations[spareVariableName].store = targetMem;
   }
 
-  public getWVec(name: string, datatype: string): XmmRegister | MmxRegister {
-    let fr = false;
-    switch(datatype) {
-      case "u64":
-        //fr = this.getFreeXmmRegister_64() || this.getFreeMmxRegister();
-        fr = this.getFreeXmmRegister() || this.getFreeMmxRegister();
-      case "u128":
-        fr = this.getFreeXmmRegister();
+  public getWVec(name: string, reg_type: RegType): XmmRegister | MmxRegister {
+    let fr: XmmRegister | MmxRegister | false = false;
+
+    if (reg_type == RegType.XMMRegister) {
+      fr = this.getFreeXmmRegister();
+    } else if(reg_type == RegType.MMXRegister) {
+      fr = this.getFreeMmxRegister();
+    } else { // assume we can use any register type
+      fr = this.getFreeXmmRegister() || this.getFreeMmxRegister();
     }
-    
+
     if (fr) {
-      //TODO: move this to the getFreeXXXRegister functions
+      //FIXME: move this to the getFreeXXXRegister functions
       this._allocations[name] = {
-        datatype: datatype,
-        store: fr
+        datatype: "u64",
+        store: fr,
       };
-  
       return fr;
     }
 
@@ -573,7 +594,8 @@ export class RegisterAllocator {
 
     let spareVariableName = allocationEntries.find(
       ([varname, { store }]) =>
-      (isXmmRegister(store) || isMmxRegister(store)) &&
+      ((reg_type == RegType.XMMRegister && isXmmRegister(store)) || 
+        (reg_type == RegType.MMXRegister && isMmxRegister(store))) &&
         matchXD(varname) &&
         !Model.hasDependants(varname) &&
         !this._clobbers.has(varname),
@@ -586,11 +608,23 @@ export class RegisterAllocator {
         `; freeing ${spareVariableName} (${valuealloc.store}) no dependants anymore`,
       );
     } else {
-      spareVariableName = Object.keys(this._allocations).find(
+      spareVariableName = allocationEntries.find(
+        ([varname, { store }]) =>
+        (
+          (varname.startsWith(IMM_VAL_PREFIX) ||
+          (["0x0", "0x1"].includes(varname) && this._clobbers.has(varname))) &&
+         ((reg_type == RegType.XMMRegister && isXmmRegister(store)) || 
+          (reg_type == RegType.MMXRegister && isMmxRegister(store)))
+        ))?.[0];
+      
+/*       Object.keys(this._allocations).find(
         (varname) =>
-        varname.startsWith(IMM_VAL_PREFIX) ||
-          (["0x0", "0x1"].includes(varname) && !this._clobbers.has(varname))
-      );
+        (varname.startsWith(IMM_VAL_PREFIX) ||
+          (["0x0", "0x1"].includes(varname) && this._clobbers.has(varname)) &&
+            ((reg_type == RegType.XMMRegister && isXmmRegister(store)) || 
+            (reg_type == RegType.MMXRegister && isMmxRegister(store))) &&
+            this._clobbers.has(varname))
+      ); */
       if (spareVariableName) {
         const valuealloc = this._allocations[spareVariableName] as ValueAllocation;
 
@@ -601,9 +635,10 @@ export class RegisterAllocator {
     }
 
     let checkToSpill = false;
-    //let folds = false;
+    let folds = false;
     if (!spareVariableName) {
-      const allocs = allocationEntries.filter(([, { store }]) => isXmmRegister(store) || isMmxRegister(store))
+      const allocs = allocationEntries.filter(([, { store }]) => (reg_type == RegType.XMMRegister && isXmmRegister(store)) || 
+                                                                (reg_type == RegType.MMXRegister && isMmxRegister(store)))
                                       .map(([name]) => name);
 
       const clobs = new Set<string>();
@@ -638,7 +673,7 @@ export class RegisterAllocator {
       checkToSpill = true;
     }
     const valuealloc = this._allocations[spareVariableName] as ValueAllocation;
-    let spilling_reg = valuealloc.store as XmmRegister | MmxRegister;
+    let spilling_reg = isXmmRegister(valuealloc.store) ? valuealloc.store as XmmRegister : valuealloc.store as MmxRegister;
     if (
       checkToSpill &&
       (matchXD(spareVariableName) || isCallerSave(spareVariableName) || matchArgPrefix(spareVariableName))
@@ -660,7 +695,7 @@ export class RegisterAllocator {
 
     this._clobbers.add(name);
     this._allocations[name] = {
-      datatype: datatype,
+      datatype: "u64",
       store: spilling_reg,
     };
 
@@ -1057,7 +1092,7 @@ export class RegisterAllocator {
   /*
    * same as backupIfVarHasDependencies, but gets varname based on store first
    */
-  public backupIfStoreHasDependencies(store: Allocation, destinationName: string): Register | ByteRegister {
+  public backupIfStoreHasDependencies(store: Allocation, destinationName: string): AnyRegister {
     assertValueAllocation(store);
     const varname = this.getVarnameFromStore(store);
     return this.backupIfVarHasDependencies(varname, destinationName);
@@ -1073,7 +1108,7 @@ export class RegisterAllocator {
    * If it has deps, it will copy it to a new reg, allocated for name "destinationName"
    * this will check a given variableName, if it has dependencies.
    */
-  public backupIfVarHasDependencies(inVarname: string, outVarname: string): Register | XmmRegister {
+  public backupIfVarHasDependencies(inVarname: string, outVarname: string): AnyRegister {
     this._clobbers.add(inVarname);
     const deps = new Set<string>();
     const allocation = this._allocations[inVarname];
@@ -1139,8 +1174,9 @@ export class RegisterAllocator {
     ) {
       const isByte = isU1(allocation);
       // allocate destination register for out[0]
-      const backupReg = (isXmmRegister(allocation.store) || isMmxRegister(allocation.store)) ? 
-                          this.getWVec(outVarname, "u64") : this.getW(outVarname) as Register;
+      const backupReg = isVecRegister(allocation.store) ? 
+                          this.getWVec(outVarname, isXmmRegister(allocation.store) ? RegType.XMMRegister : RegType.MMXRegister) :
+                          this.getW(outVarname) as Register;
       // and copy the value
 
       const comment = Logger.log(
@@ -1159,7 +1195,7 @@ export class RegisterAllocator {
         } else {
           this._preInstructions.push(`movq ${backupReg}, ${xmmStore};${comment ?? ""}`);
         }
-      }  else if(isXmmRegister(allocation.store) || isMmxRegister(allocation.store)) {
+      }  else if(isVecRegister(allocation.store)) {
         this._preInstructions.push(`movq ${backupReg}, ${allocation.store};${comment ?? ""}`);
        } else {
         this._preInstructions.push(`mov ${backupReg}, ${allocation.store};${comment ?? ""}`);

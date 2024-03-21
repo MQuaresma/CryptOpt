@@ -25,43 +25,57 @@ import type {
   U1FlagAllocation,
   U1RegisterAllocation,
   U64RegisterAllocation,
+  MmxRegisterAllocation,
   XmmRegisterAllocation,
+  U64XmmRegisterAllocation,
+  U64MemoryAllocation,
+  U64MmxRegisterAllocation,
 } from "@/types";
 
 const getRa = () => RegisterAllocator.getInstance();
 
-//export function mx__mx_mxm(out: string, r0: RegisterAllocation, r1: RegisterAllocation): asm[] {
-//  
-//}
-//
-//function m64__m64_m64(out: string, r0: U64RegisterAllocation, r1: U64RegisterAllocation): asm[] {
-//}
+export function mx__mx_mx(out: string, r0: MmxRegisterAllocation, r1: MmxRegisterAllocation): asm[] {
+  return mx__mx64_mx64(out, r0 as U64MmxRegisterAllocation, r1 as U64MmxRegisterAllocation);
+}
 
-export function v__v_v(out: string, r0: RegisterAllocation, r1: RegisterAllocation): asm[] {
-  return v__v128_v128(out, r0 as U64RegisterAllocation, r1 as U64RegisterAllocation);
+function mx__mx64_mx64(out: string, r0: U64MmxRegisterAllocation, r1: U64MmxRegisterAllocation): asm[] {
+  const ra = getRa(); 
+  const r0store = ra.backupIfStoreHasDependencies(r0, out);
+
+  return [`paddq ${r0store}, ${r1.store}; mx__mx64_mx64`];
+}
+
+export function mx__mx_m(out: string, r0: MmxRegisterAllocation, r1: MemoryAllocation): asm[] {
+  return mx__mx64_m64(out, r0 as U64MmxRegisterAllocation, r1 as U64MemoryAllocation);
+}
+
+function mx__mx64_m64(out: string, r0: U64MmxRegisterAllocation, r1: U64MemoryAllocation): asm[] {
+  const ra = getRa();
+  const r0store = ra.backupIfStoreHasDependencies(r0, out);
+
+  return [`paddq ${r0store}, ${r1.store}; mx__mx64_m64`];
+}
+
+export function v__v_v(out: string, r0: XmmRegisterAllocation, r1: XmmRegisterAllocation): asm[] {
+  return v__v128_v128(out, r0 as U64XmmRegisterAllocation, r1 as U64XmmRegisterAllocation);
   // throw new Error("TSNH. Must be r128+r128.");
 }
 
-// reg = reg(128) + reg (128)
-function v__v128_v128(out: string, r0: U64RegisterAllocation, r1: U64RegisterAllocation): asm[] {
+function v__v128_v128(out: string, r0: U64XmmRegisterAllocation, r1: U64XmmRegisterAllocation): asm[] {
   const ra = getRa();
   const r0store = ra.backupIfStoreHasDependencies(r0, out);
 
   return [`paddq ${r0store}, ${r1.store}; v__v128_v128`];
-
-  throw new Error("TSNH Must be r128 + r128");
 }
 
-export function v__v_m(out: string, r0: RegisterAllocation, m1: MemoryAllocation): asm[] {
-  return v__v128_m128(out, r0, m1);
+export function v__v_m(out: string, r0: XmmRegisterAllocation, m1: MemoryAllocation): asm[] {
+  return v__v128_m128(out, r0 as U64XmmRegisterAllocation, m1 as U64MemoryAllocation);
 }
 
-function v__v128_m128(out: string, r0: RegisterAllocation | MemoryAllocation, m1: MemoryAllocation): asm[] {
+function v__v128_m128(out: string, r0: U64XmmRegisterAllocation, m1: U64MemoryAllocation): asm[] {
   const ra = getRa();
   const r0store = ra.backupIfStoreHasDependencies(r0, out);
 
   return [`paddq ${r0store}, ${m1.store}; v__v128_m128`];
-
-  throw new Error("TSNH Must be r128 + m128");
 }
 

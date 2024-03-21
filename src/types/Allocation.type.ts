@@ -71,6 +71,13 @@ export type U64XmmRegisterAllocation = {
   store: XmmRegister_64;
 };
 
+export enum RegType {
+  U64Register = 0,
+  MMXRegister = 1,
+  XMMRegister = 2,
+  VecRegister = 3
+}
+
 export type U1Allocation =
   | U1MemoryAllocation
   | U1RegisterAllocation
@@ -82,6 +89,7 @@ export type U128Allocation = { datatype: "u128"; store?: undefined };
 export type MemoryAllocation = U1MemoryAllocation | U64MemoryAllocation;
 export type RegisterAllocation = U1RegisterAllocation | U64RegisterAllocation;
 export type XmmRegisterAllocation = U1XmmRegisterAllocation | U64XmmRegisterAllocation;
+export type MmxRegisterAllocation = U1MmxRegisterAllocation | U64MmxRegisterAllocation;
 export type PointerAllocation = {
   datatype: string; // "u64[]";
   store: mem | Register;

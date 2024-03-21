@@ -162,6 +162,10 @@ export function isXmmRegister(test: string | undefined | null): test is XmmRegis
   return isXmmRegister_64(test); //check the pseudo-variants too as these are still XmmRegisters under-the-hood
 }
 
+export function isVecRegister(test: string | undefined | null): test is XmmRegister | MmxRegister {
+  return isXmmRegister(test) || isMmxRegister(test);
+}
+
 export function isByteRegister(test: string | undefined | null): test is ByteRegister {
   if (!test) {
     return false;
