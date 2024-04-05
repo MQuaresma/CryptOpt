@@ -328,7 +328,7 @@ export class RegisterAllocator {
   }
 
   /*
-   * Self explanatory but does the inverse of xmm2reg/mmx2reg
+   * Self explanatory but does the inverse of xmm2reg
    */
   public static reg2xmm({ store }: Pick<ValueAllocation, "store">): XmmRegisterAllocation {
     return RegisterAllocator.getInstance().moveRegToXmm({ store });
@@ -339,7 +339,7 @@ export class RegisterAllocator {
     const dest = isXmmRegister_64(vecStore) ? getQwHalfFromXmmReg(vecStore as XmmRegister_64) : vecStore;
 
     if(isMmxRegister(store)) {
-      this.addToPreInstructions(`movq2dq ${dest}, ${store}; mmx-ify ${varname}`);
+      this.addToPreInstructions(`movq2dq ${dest}, ${store}; un-mmx-ify ${varname}`);
     } else {
       // assume it's an x86 register
       this.addToPreInstructions(`movq ${dest}, ${store}; xmm-ify ${varname}`);
@@ -356,7 +356,7 @@ export class RegisterAllocator {
     const dest = this.getWVec(varname, RegType.MMXRegister);
 
     if(isXmmRegister(store)) {
-      this.addToPreInstructions(`movdq2q ${dest}, ${store}; mmx-ify ${varname}`);
+      this.addToPreInstructions(`movdq2q ${dest}, ${store}; un-mmx-ify ${varname}`);
     } else {
       // assume it's an x86 register
       this.addToPreInstructions(`movq ${dest}, ${store}; mmx-ify ${varname}`);
@@ -490,7 +490,7 @@ export class RegisterAllocator {
       let choice = C_DI_SPILL_LOCATION.C_DI_MEM; // fallback
 
       // if we can and have a free xmm
-      if (!isCallerSave(spareVariableName) && (this.canXmm && freeXmm) || (this.canMmx && freeMmx)) {
+      if (!isCallerSave(spareVariableName) && ((this.canXmm && freeXmm) || (this.canMmx && freeMmx))) {
         // consider XMMs/MMXs.
 
         // we always want xmms if we prefer
@@ -524,14 +524,14 @@ export class RegisterAllocator {
           spilling_reg = reg;
         }
 
-        if (this.canXmm) {
+        if (this.canXmm && freeXmm) {
           //const freeXmm = getQwHalfFromXmmReg(freeXmm_64 as XmmRegister_64);
           //this.addToPreInstructions(`pinsrq ${freeXmm}, ${spilling_reg}, ${isHighXmm(freeXmm_64 as XmmRegister_64) ? 0x1 : 0x0}; spilling ${spareVariableName} to xmm`);
           //this._allocations[spareVariableName].store = freeXmm_64 as XmmRegister_64;
 
           this.addToPreInstructions(`movq ${freeXmm}, ${spilling_reg}; spilling ${spareVariableName} to xmm`); 
           this._allocations[spareVariableName].store = freeXmm as XmmRegister;
-        } else if (this.canMmx) {
+        } else if (this.canMmx && freeMmx) {
           this._mmx_dirty = this._mmx_dirty || true;
           this.addToPreInstructions(`movq ${freeMmx}, ${spilling_reg}; spilling ${spareVariableName} to mmx`);
           this._allocations[spareVariableName].store = freeMmx as MmxRegister;
@@ -616,15 +616,7 @@ export class RegisterAllocator {
          ((reg_type == RegType.XMMRegister && isXmmRegister(store)) || 
           (reg_type == RegType.MMXRegister && isMmxRegister(store)))
         ))?.[0];
-      
-/*       Object.keys(this._allocations).find(
-        (varname) =>
-        (varname.startsWith(IMM_VAL_PREFIX) ||
-          (["0x0", "0x1"].includes(varname) && this._clobbers.has(varname)) &&
-            ((reg_type == RegType.XMMRegister && isXmmRegister(store)) || 
-            (reg_type == RegType.MMXRegister && isMmxRegister(store))) &&
-            this._clobbers.has(varname))
-      ); */
+  
       if (spareVariableName) {
         const valuealloc = this._allocations[spareVariableName] as ValueAllocation;
 
@@ -1186,7 +1178,7 @@ export class RegisterAllocator {
         )}, current hard deps: ${setToString(Model.hardDependencies, 4)}`,
       );
 
-      if (isByte) {
+      if (isByte && !isVecRegister(allocation.store)) {
         this._preInstructions.push(`movzx ${backupReg}, ${isMem(allocation.store) ? "byte " : ""}${allocation.store};${comment ?? ""}`);
       } else if(isXmmRegister_64(allocation.store)) {
         const xmmStore = getQwHalfFromXmmReg(allocation.store);

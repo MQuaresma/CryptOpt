@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-import { Flags, FlagState } from "@/enums";
+import { Flags, FlagState, XmmRegister, MmxRegister } from "@/enums";
 import { ADX, isByteRegister, isU1, zx } from "@/helper";
 import { Model } from "@/model";
 import { RegisterAllocator } from "@/registerAllocator";
+
 import type {
   asm,
   MemoryAllocation,
@@ -40,7 +41,7 @@ export function mx__mx_mx(out: string, r0: MmxRegisterAllocation, r1: MmxRegiste
 
 function mx__mx64_mx64(out: string, r0: U64MmxRegisterAllocation, r1: U64MmxRegisterAllocation): asm[] {
   const ra = getRa(); 
-  const r0store = ra.backupIfStoreHasDependencies(r0, out);
+  const r0store = ra.backupIfStoreHasDependencies(r0, out) as MmxRegister;
 
   return [`paddq ${r0store}, ${r1.store}; mx__mx64_mx64`];
 }
@@ -51,7 +52,7 @@ export function mx__mx_m(out: string, r0: MmxRegisterAllocation, r1: MemoryAlloc
 
 function mx__mx64_m64(out: string, r0: U64MmxRegisterAllocation, r1: U64MemoryAllocation): asm[] {
   const ra = getRa();
-  const r0store = ra.backupIfStoreHasDependencies(r0, out);
+  const r0store = ra.backupIfStoreHasDependencies(r0, out) as MmxRegister;
 
   return [`paddq ${r0store}, ${r1.store}; mx__mx64_m64`];
 }
@@ -63,7 +64,7 @@ export function v__v_v(out: string, r0: XmmRegisterAllocation, r1: XmmRegisterAl
 
 function v__v128_v128(out: string, r0: U64XmmRegisterAllocation, r1: U64XmmRegisterAllocation): asm[] {
   const ra = getRa();
-  const r0store = ra.backupIfStoreHasDependencies(r0, out);
+  const r0store = ra.backupIfStoreHasDependencies(r0, out) as XmmRegister;
 
   return [`paddq ${r0store}, ${r1.store}; v__v128_v128`];
 }
@@ -74,7 +75,7 @@ export function v__v_m(out: string, r0: XmmRegisterAllocation, m1: MemoryAllocat
 
 function v__v128_m128(out: string, r0: U64XmmRegisterAllocation, m1: U64MemoryAllocation): asm[] {
   const ra = getRa();
-  const r0store = ra.backupIfStoreHasDependencies(r0, out);
+  const r0store = ra.backupIfStoreHasDependencies(r0, out) as XmmRegister;
 
   return [`paddq ${r0store}, ${m1.store}; v__v128_m128`];
 }

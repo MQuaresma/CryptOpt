@@ -127,7 +127,7 @@ export function fr__rm_rm_rmf(
   const cinFlag = isFlag(cin.store);
   const cinMem = isMem(cin.store);
   const cinXmm = isXmmRegister(cin.store);
-  const cinMmx = isMmxRegister(cin.store); //maybe we can optimize this, since it can only be either in Xmm or Mmx or Memory
+  const cinMmx = isMmxRegister(cin.store);
 
   // a bit of a hack... lets see how long it takes until this breaks my neck and I need to implement it properly
   // the issue is that the flag has been spilled to a byteReg, which has then been spilled to a reg, then to xmm
@@ -312,8 +312,8 @@ export function v__vm_vm(out: string, arg0: ValueAllocation, arg1: ValueAllocati
   /**
    * If the args are in incompatible types (e.g. scalar & vector OR flag & vector)
    * we need to move one of them to a register of the same type.
-   * In this case : vector -> scalar
-   * rr
+   * In this case : scalar -> vector
+   * vv
    */
   let xmm0 = isXmmRegister(arg0.store);
   let mmx0 = isMmxRegister(arg0.store);
@@ -335,35 +335,26 @@ export function v__vm_vm(out: string, arg0: ValueAllocation, arg1: ValueAllocati
     xmm0 = true;
     mmx0 = false;
     reg0 = false;
-  } else if (mmx0 && reg1) {
+  }/*  else if (mmx0 && reg1) {
     arg1 = RegisterAllocator.reg2mmx(arg1);
     xmm1 = false;
     mmx1 = true;
     reg1 = false;
+    mem1 = false;
   } else if (reg0 && mmx1) {
     arg0 = RegisterAllocator.reg2mmx(arg0);
     xmm0 = false;
     mmx0 = true;
     reg0 = false;
-  }
+    mem0 = false;
+  } */
 
   if (xmm0 && xmm1) {
     return v__v_v(out, arg0 as XmmRegisterAllocation, arg1 as XmmRegisterAllocation);
-  } 
-  if (xmm0 && mem1) {
-    return v__v_m(out, arg0 as XmmRegisterAllocation, arg1 as MemoryAllocation);
-  } 
-  if (mem0 && xmm1) {
-    return v__v_m(out, arg1 as XmmRegisterAllocation, arg0 as MemoryAllocation);
   }
+
   if (mmx0 && mmx1) {
     return mx__mx_mx(out, arg0 as MmxRegisterAllocation, arg1 as MmxRegisterAllocation);
-  }
-  if (mmx0 && mem1) {
-    return mx__mx_m(out, arg0 as MmxRegisterAllocation, arg1 as MemoryAllocation);
-  }
-  if (mem0 && mmx1) {
-    return mx__mx_m(out, arg1 as MmxRegisterAllocation, arg0 as MemoryAllocation);
   }
 
   throw new Error("arguments are not vv, vm, mv. Abort");

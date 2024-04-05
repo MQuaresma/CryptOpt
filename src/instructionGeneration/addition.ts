@@ -16,7 +16,7 @@
 
 import { omit } from "lodash-es";
 
-import { delimbify, isFlag, isImm, isU1, isMmxRegister, isXmmRegister, isXmmRegister_64, limbify, TEMP_VARNAME } from "@/helper";
+import { delimbify, isFlag, isImm, isU1, isMem, isMmxRegister, isXmmRegister, isXmmRegister_64, isVecRegister, limbify, TEMP_VARNAME } from "@/helper";
 import { Model } from "@/model";
 import { Paul } from "@/paul";
 import { RegisterAllocator } from "@/registerAllocator";
@@ -308,8 +308,9 @@ function add64(c: CryptOpt.StringOperation): asm[] {
 
     // two operands, no cout
     //
-    if(no_flag_imm_ops && (isXmmRegister(a_arg0.store) || isMmxRegister(a_arg0.store) || 
-                          isXmmRegister(a_arg1.store) || isMmxRegister(a_arg1.store))) {
+    // TODO: is it more efficient to "spill" to scalars if we have to move things around
+    // between MMX/XMM registers
+    if(no_flag_imm_ops && isVecRegister(a_arg0.store) && isVecRegister(a_arg1.store)) {
       return [`; v__vm_vm`, ...v__vm_vm(c.name[0], a_arg0, a_arg1)];
     } 
 
